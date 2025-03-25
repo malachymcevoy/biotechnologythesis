@@ -1,0 +1,127 @@
+using CSV
+using DataFrames
+using DifferentialEquations
+using Plots
+
+
+#region < flux data >
+flux_ring1_data = CSV.read("flux_ring1.csv", DataFrame, delim='\t')
+flux_ring2_data = CSV.read("flux_ring2.csv", DataFrame, delim='\t')
+flux_ring3_data = CSV.read("flux_ring3.csv", DataFrame, delim='\t')
+flux_ring4_data = CSV.read("flux_ring4.csv", DataFrame, delim='\t')
+flux_ring5_data = CSV.read("flux_ring5.csv", DataFrame, delim='\t')
+flux_ring6_data = CSV.read("flux_ring6.csv", DataFrame, delim='\t')
+flux_ring7_data = CSV.read("flux_ring7.csv", DataFrame, delim='\t')
+flux_ring8_data = CSV.read("flux_ring8.csv", DataFrame, delim='\t')
+
+rename!(flux_ring1_data, ncol(flux_ring1_data)-1 => "flux_ring1_value",
+                            ncol(flux_ring1_data)   => "flux_ring1_error")
+
+rename!(flux_ring2_data, ncol(flux_ring2_data)-1 => "flux_ring2_value",
+                            ncol(flux_ring2_data)   => "flux_ring2_error")
+
+rename!(flux_ring3_data, ncol(flux_ring3_data)-1 => "flux_ring3_value",
+                            ncol(flux_ring3_data)   => "flux_ring3_error")
+
+rename!(flux_ring4_data, ncol(flux_ring4_data)-1 => "flux_ring4_value",
+                            ncol(flux_ring4_data)   => "flux_ring4_error")
+
+rename!(flux_ring5_data, ncol(flux_ring5_data)-1 => "flux_ring5_value",
+                            ncol(flux_ring5_data)   => "flux_ring5_error")
+
+rename!(flux_ring6_data, ncol(flux_ring6_data)-1 => "flux_ring6_value",
+                            ncol(flux_ring6_data)   => "flux_ring6_error")
+                            
+rename!(flux_ring7_data, ncol(flux_ring7_data)-1 => "flux_ring7_value",
+                            ncol(flux_ring7_data)   => "flux_ring7_error")
+
+rename!(flux_ring8_data, ncol(flux_ring8_data)-1 => "flux_ring8_value",
+                            ncol(flux_ring8_data)   => "flux_ring8_error")
+
+
+function shift_down(df)
+    new_row = DataFrame([(colname => 0.0) for colname in names(df)]...)
+    return vcat(new_row, df)  # Concatenate new row with original DataFrame
+end
+
+flux_ring1_data = shift_down(flux_ring1_data)
+flux_ring2_data = shift_down(flux_ring2_data)
+flux_ring3_data = shift_down(flux_ring3_data)
+flux_ring4_data = shift_down(flux_ring4_data)
+flux_ring5_data = shift_down(flux_ring5_data)
+flux_ring6_data = shift_down(flux_ring6_data)
+flux_ring7_data = shift_down(flux_ring7_data)
+flux_ring8_data = shift_down(flux_ring8_data)
+
+flux_ring1_last_two = flux_ring1_data[:, end-1:end]
+flux_ring2_last_two = flux_ring2_data[:, end-1:end]
+flux_ring3_last_two = flux_ring3_data[:, end-1:end]
+flux_ring4_last_two = flux_ring4_data[:, end-1:end]
+flux_ring5_last_two = flux_ring5_data[:, end-1:end]
+flux_ring6_last_two = flux_ring6_data[:, end-1:end]
+flux_ring7_last_two = flux_ring7_data[:, end-1:end]
+flux_ring8_last_two = flux_ring8_data[:, end-1:end]
+
+combined_df = hcat(flux_ring1_last_two, flux_ring2_last_two, flux_ring3_last_two,
+                    flux_ring4_last_two, flux_ring5_last_two, flux_ring6_last_two,
+                    flux_ring7_last_two, flux_ring8_last_two)
+
+# show(combined_df)
+
+constant = 714
+#endregion
+
+"""
+#region < ODE model >
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    Din = t < 540 ? Din_init : 0.0
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params = [2.0, 833.0, 4.0, 236.0, 33600.0 * (0.2 / 20.0), (0.2 / 20.0), 0.005 * (0.2 / 20.0),
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
+
+prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params)
+sol = solve(prob, RadauIIA5(), saveat=1.0)
+#endregion
+
+#region < ODE plot >
+labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
+
+time_vals = sol.t / 60
+ODEfig = plot()
+for i in 2:length(initial_conditions)
+    plot!(ODEfig, time_vals, sol[i, :], label=labels[i])
+end
+xlabel!("Time (hours)")
+ylabel!("μM of molecules")
+title!("ODE Model")
+#endregion
+"""
+
+#region < flux plot >
+flux_fig = plot(size=(1000, 700), left_margin=5Plots.mm, bottom_margin=5Plots.mm)  # Adjust the left margin
+for i in 1:8
+    values = combined_df[:, Symbol("flux_ring$(i)_value")] ./ constant
+    errors = combined_df[:, Symbol("flux_ring$(i)_error")] ./ constant
+    x_values = (0:length(values)-1) * 20 / 60
+    scatter!(flux_fig, x_values, values, yerr=errors, label="Flux Ring $i", markersize=3)
+end
+xlabel!("Time (hours)")
+ylabel!("GFP concentration (µM)")
+title!("GFP production by microchemostat system", titlefont=font(14, "Arial"))  # Adjust font size
+#endregion
