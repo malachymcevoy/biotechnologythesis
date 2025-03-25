@@ -1,18 +1,14 @@
-using CSV
-using DataFrames
-using DifferentialEquations
-using Plots
-
+using CSV, DataFrames, Plots
 
 #region < flux data >
-flux_ring1_data = CSV.read("flux_ring1.csv", DataFrame, delim='\t')
-flux_ring2_data = CSV.read("flux_ring2.csv", DataFrame, delim='\t')
-flux_ring3_data = CSV.read("flux_ring3.csv", DataFrame, delim='\t')
-flux_ring4_data = CSV.read("flux_ring4.csv", DataFrame, delim='\t')
-flux_ring5_data = CSV.read("flux_ring5.csv", DataFrame, delim='\t')
-flux_ring6_data = CSV.read("flux_ring6.csv", DataFrame, delim='\t')
-flux_ring7_data = CSV.read("flux_ring7.csv", DataFrame, delim='\t')
-flux_ring8_data = CSV.read("flux_ring8.csv", DataFrame, delim='\t')
+flux_ring1_data = CSV.read("introduction/Chemostat_data/flux_ring1.csv", DataFrame, delim='\t')
+flux_ring2_data = CSV.read("introduction/Chemostat_data/flux_ring2.csv", DataFrame, delim='\t')
+flux_ring3_data = CSV.read("introduction/Chemostat_data/flux_ring3.csv", DataFrame, delim='\t')
+flux_ring4_data = CSV.read("introduction/Chemostat_data/flux_ring4.csv", DataFrame, delim='\t')
+flux_ring5_data = CSV.read("introduction/Chemostat_data/flux_ring5.csv", DataFrame, delim='\t')
+flux_ring6_data = CSV.read("introduction/Chemostat_data/flux_ring6.csv", DataFrame, delim='\t')
+flux_ring7_data = CSV.read("introduction/Chemostat_data/flux_ring7.csv", DataFrame, delim='\t')
+flux_ring8_data = CSV.read("introduction/Chemostat_data/flux_ring8.csv", DataFrame, delim='\t')
 
 rename!(flux_ring1_data, ncol(flux_ring1_data)-1 => "flux_ring1_value",
                             ncol(flux_ring1_data)   => "flux_ring1_error")
