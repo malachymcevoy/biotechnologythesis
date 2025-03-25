@@ -1,1 +1,45 @@
+using DataFrames
+using DifferentialEquations
+using Plots
 
+#region < ODE model >
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    Din = t < 540 ? Din_init : 0.0
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params = [2.0, 833.0, 4.0, 236.0, 33600.0 * (0.2 / 20.0), (0.2 / 20.0), 0.005 * (0.2 / 20.0),
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
+
+prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params)
+sol = solve(prob, RadauIIA5(), saveat=1.0)
+#endregion
+
+#region < ODE plot >
+labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
+
+time_vals = sol.t / 60
+ODEfig = plot()
+for i in 2:length(initial_conditions)
+    plot!(ODEfig, time_vals, sol[i, :], label=labels[i])
+end
+xlabel!("Time (hours)")
+ylabel!("μM of molecules")
+title!("ODE Model")
+#endregion
+
+display("image/png", ODEfig)
