@@ -1,0 +1,68 @@
+using DataFrames, DifferentialEquations, Plots
+
+# Define the ODE model (same as before)
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    Din = t < 540 ? Din_init : 0.0
+
+    # Energy consumption terms
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e  # Energy balance
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+
+    # Return the calculated energy usage values
+    return vtx, vtl
+end
+
+# Initial conditions and parameters
+initial_conditions = [59999, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0), (0.2 / 20.0), initial_conditions[2] * (0.2 / 20.0),
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
+
+# Range of DNA concentrations to test
+dna_vals = range(0.001, 0.02, length=1000)  # 100 values for better resolution
+transcription_energy_usage = zeros(length(dna_vals))  # This will store the transcription energy usage
+
+# Loop over DNA concentrations and solve the ODE for each
+for (i, D0) in enumerate(dna_vals)
+    modified_initial_conditions = copy(initial_conditions)
+    modified_initial_conditions[2] = D0
+
+    modified_parameters = copy(params)
+    modified_parameters[7] = D0 * (0.2 / 20.0)
+    
+    # Solve ODE with the modified initial conditions and parameters
+    prob = ODEProblem(model!, modified_initial_conditions, (0.0, 1000.0), modified_parameters)
+    sol = solve(prob, RadauIIA5(), saveat=1.0)
+
+    # Extract energy usage from the solution (vtx + vtl)
+    vtx_values = zeros(length(sol.t))
+    vtl_values = zeros(length(sol.t))
+
+    # Loop through time and store the vtx and vtl values
+    for j in 1:length(sol.t)
+        # Calculate vtx and vtl at each time step
+        vtx_values[j], vtl_values[j] = model!(zeros(7), sol[1:7, j], modified_parameters, sol.t[j])
+    end
+
+    # Calculate the total transcription energy usage (sum over time)
+    total_transcription_energy = sum(vtx_values) + sum(vtl_values)  # Sum over time
+    
+    # Store the total transcription energy usage for the current DNA concentration
+    transcription_energy_usage[i] = total_transcription_energy
+end
+
+# Plot transcription energy usage vs DNA concentration (D0)
+plot(dna_vals, transcription_energy_usage, xlabel="DNA Concentration (μM)", ylabel="Transcription Energy Usage",
+     title="Transcription Energy Usage vs DNA Concentration", label="Transcription Energy", color=:viridis, linewidth=2)
+
+display(plot!)

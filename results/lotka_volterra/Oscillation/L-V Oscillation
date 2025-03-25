@@ -1,0 +1,43 @@
+using Plots, DifferentialEquations, Optim, Statistics
+
+function lotka_volterra(du, u, p, t)
+    α, β, γ, δ = p
+    x, y = u
+    
+    du[1] = α * x - β * x * y   # Prey population equation
+    du[2] = -γ * y + δ * x * y  # Predator population equation
+end
+
+init = [5, 5] 
+params = [0.5142589425458219, 1.0585627635842612, 1.9836903240835775, 4.811826129302135]
+t_end = 100
+tspan = (0.0, t_end)  
+
+prob = ODEProblem(lotka_volterra, init, tspan, params)
+sol = solve(prob, Tsit5())
+
+prey_vals = sol[1, :]  # Prey population is the first row
+pred_vals = sol[2, :]  # Predator population is the second row
+
+plt1 = plot(sol.t, prey_vals, label="Prey", linewidth=2, xlabel="Time", ylabel="Population", title="Population vs. Time", size=(600,400), xlims=(0,t_end))
+plot!(sol.t, pred_vals, label="Predator", linewidth=2)
+
+plot(plt1, size=(1200,550))
+
+peak_indices = findall(diff(sign.(diff(prey_vals))) .< 0) .+ 1  # Find peak indices in prey population
+peak_times = sol.t[peak_indices]  # Extract corresponding time values at the peaks
+peak_values = prey_vals[peak_indices]  # Extract prey population at the peaks
+
+if length(peak_times) > 1
+    periods = diff(peak_times)
+    avg_period = mean(periods)
+else
+    avg_period = Inf # if no oscillations are found
+end
+
+# Output the peak times and values
+println("Peak Times: ", peak_times)
+println("Peak Values: ", peak_values)
+println("Average Period: ", avg_period)
+# Display the plot
+plot(plt1, size=(1200,550))

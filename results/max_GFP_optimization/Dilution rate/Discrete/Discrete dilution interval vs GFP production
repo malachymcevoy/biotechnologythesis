@@ -1,0 +1,76 @@
+using DataFrames, DifferentialEquations, Plots, DiffEqCallbacks
+
+# Define the model
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+# Initial conditions and parameters
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params = [2.0, 833.0, 4.0, 236.0, 0.0, 0.0, 0.0,
+          1000.0, 1.0, 0.038153465, 0.084, 0.0, 3750.0, 54.75, 105.0, 100.0]
+
+# Dilution specifications
+dilSpecs = ([1, 2, 7], [33600.0, 0.005, 1.51], [1, 7], [33600.0, 1.51], [1, 7], [33600.0, 1.51])
+
+f_V = 0.2
+s1, s2, tmax, tsave, nspecies = 9.0, 0.0, 20.0, 100.0, 7.0
+
+# Discrete dilution logic in the callback function
+function discreteDilute!(integrator)
+    f_V, tau, s1, s2, tmax, tsave, nspecies = integrator.p[end-6:end]
+    INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C = dilSpecs
+
+    for j in 1:7 integrator.u[j] *= (1.0 - f_V) end  # Dilute by (1 - f_V)
+
+    if integrator.t < s1 * 60
+        for j in 1:length(INDEX_DISC_A)
+            integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
+        end
+    elseif s1 * 60 <= integrator.t < s2 * 60
+        for j in 1:length(INDEX_DISC_B)
+            integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
+        end
+    else
+        for j in 1:length(INDEX_DISC_C)
+            integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+        end
+    end
+end
+
+# Function to compute GFP production for a given tau
+function compute_gfp(tau)
+    params_flat = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies])
+    periodcb = PeriodicCallback(discreteDilute!, tau; save_positions=(false, false))
+    prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_flat)
+    sol = solve(prob, Tsit5(), callback=periodcb, saveat=1.0)
+    return maximum(sol[6, :])  # Return the maximum GFP production (Gm)
+end
+
+# Generate tau values and compute maximum GFP for each
+taus = 10.0:10.0:300.0  # Dilution interval range (in minutes)
+gfp_production = [compute_gfp(tau) for tau in taus]
+
+# Find the tau that maximizes GFP production
+optimal_tau = taus[argmax(gfp_production)]
+optimal_gfp = maximum(gfp_production)
+
+# Print the optimal tau and GFP value
+println("Optimal dilution interval (τ): ", optimal_tau, " minutes")
+println("Maximum GFP produced: ", optimal_gfp)
+
+# Plot the results
+plot(taus, gfp_production, xlabel="Dilution Interval (minutes)", ylabel="Max GFP Production",
+     title="Effect of Dilution Interval on GFP Production", lw=2, color=:blue)

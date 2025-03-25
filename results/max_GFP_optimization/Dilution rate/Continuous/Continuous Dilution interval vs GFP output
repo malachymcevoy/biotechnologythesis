@@ -1,0 +1,45 @@
+using DataFrames, DifferentialEquations, Plots
+
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    Din = t < 540 ? Din_init : 0.0
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e  # Energy balance
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params_base = [2.0, 833.0, 4.0, 236.0, 0.0, 0.0, 0.0,  # `ein` and `Din_init` will be updated
+               1000.0, 1.0, 0.038153465, 0.084, 0.0, 3750.0, 54.75, 105.0, 100.0]
+
+# Use dilution interval (τ) instead of direct dilution rates
+dilution_intervals = range(5, stop=100, length=20)
+GFP_outputs = Float64[]
+
+for τ in dilution_intervals
+    params = copy(params_base)
+    
+    # Adjust energy and DNA input as inverse of dilution interval
+    params[5] = 33600.0 * (0.2 / τ)  # Energy input should decrease with smaller τ
+    params[6] = 0.2 / τ
+    params[7] = 0.005 * (0.2 / τ)    # DNA input should also decrease with smaller τ
+    params[12] = 1.51 * (0.2 / τ)
+
+    prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params)
+    sol = solve(prob, RadauIIA5(), saveat=1.0)
+
+    push!(GFP_outputs, maximum(sol[6, :]))  # Max GFP concentration
+end
+
+plot(dilution_intervals, GFP_outputs, xlabel="Dilution Interval (τ)", ylabel="Max GFP Output", 
+     title="GFP Output vs. Dilution Interval", lw=2)
