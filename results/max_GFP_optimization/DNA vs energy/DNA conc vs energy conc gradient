@@ -19,7 +19,6 @@ function model!(du, u, p, t)
     du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
 end
 
-# Define the objective function for LBFGS (to minimize negative GFP)
 function optimize_initial_energy(x, p)
     init_cond = [x[1], x[2], 0.0, 0.0, 0.0, 0.0, 1.51]  # Use a non-mutating array assignment
     # Energy concentration (e0) and DNA concentration (D0) are directly assigned
@@ -35,6 +34,9 @@ function optimize_initial_energy(x, p)
     return -max_Gm  # Negative for minimization
 end
 
+initial_conditions = [x_initial[1], x_initial[2], 0.0, 0.0, 0.0, 0.0, 1.51]
+params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0), (0.2 / 20.0), initial_conditions[2] * (0.2 / 20.0),
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
 
 # Initial guess for [e0, D0] and optimization bounds
 x_initial = [33600.0, 0.015]

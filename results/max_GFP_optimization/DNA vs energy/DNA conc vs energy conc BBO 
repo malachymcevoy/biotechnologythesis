@@ -31,6 +31,10 @@ function optimize_initial_energy(x, p)
     return -max_Gm
 end
 
+initial_conditions = [x_initial[1], x_initial[2], 0.0, 0.0, 0.0, 0.0, 1.51]
+params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0), (0.2 / 20.0), initial_conditions[2] * (0.2 / 20.0),
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
+
 x_initial = [33600.0, 0.01]  # Initial guess for [e0, D0]
 lb, ub = [1000.0, 0.001], [60000.0, 0.02]  # Bounds for energy and DNA concentration
 
