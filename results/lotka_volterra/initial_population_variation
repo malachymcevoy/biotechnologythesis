@@ -1,4 +1,4 @@
-using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, Zygote, SciMLSensitivity, LineSearches
+using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, Zygote, SciMLSensitivity, LineSearches, OptimizationBBO
 
 # create the lotka_volterra function
 function lotka_volterra(du, u, p, t)
@@ -13,7 +13,7 @@ end
 function f(u,p)
 	α, β, γ, δ = p 		# Function parameters
 	x0 = u[1] 			# This is the optimization variable (initial prey population)
-	tspan = (0.0, 50.0) # Time span for the simulation
+	tspan = (0.0, 100.0) # Time span for the simulation
 
 	u0 = [x0, p[5]]		# Define the initial prey/predator populations
 	
@@ -24,19 +24,28 @@ function f(u,p)
 	return -peak_prey
 end
 
-p_prey = [.5, 1.0, 3.0, 1.0, 1.0] # Define parameter values for α, β, γ, δ and y0
+p_prey = [.5, 1.0, 3.0, 1.0, 1.0] # Define parameter values for α, β, γ, δ and initial predator population
 u0_prey = [5.0]		# Initial guess for prey population
-lb_prey, ub_prey = [0.1] , [50.0]
+lb_prey, ub_prey = [0.1], [50.0]
 
 opt_func_prey = OptimizationFunction(f, AutoZygote())
 opt_prob_prey = OptimizationProblem(opt_func_prey, u0_prey, p_prey; lb=lb_prey, ub=ub_prey)
 
-sol_prey = solve(opt_prob_prey, NelderMead())
+sol_prey_BBO = solve(opt_prob_prey, BBO_adaptive_de_rand_1_bin_radiuslimited())
+sol_prey_NM = solve(opt_prob_prey, NelderMead())
+sol_prey_LBFGS = solve(opt_prob_prey, LBFGS())
 
-peak_prey_index = argmax(sol[1, :])[1]  # Index of the peak prey population
-peak_prey_time = sol.t[peak_prey_index]  # Corresponding time
+println("BBO Optimizer Results:")
+println("Optimal Initial Prey Population: ", sol_prey_BBO.u[1])
+println("Maximum Peak Prey Population: ", -sol_prey_BBO.minimum)
 
-println("The optimal initial prey population that returns the highest peak prey population is: ", sol_prey.u[1], ", returning a peak prey population of ", -sol_prey.minimum, " at time ", peak_prey_time)
+println("\nNelder-Mead Optimizer Results:")
+println("Optimal Initial Prey Population: ", sol_prey_NM.u[1])
+println("Maximum Peak Prey Population: ", -sol_prey_NM.minimum)
+
+println("\nLBFGS Optimizer Results:")
+println("Optimal Initial Prey Population: ", sol_prey_LBFGS.u[1])
+println("Maximum Peak Prey Population: ", -sol_prey_LBFGS.minimum)
 #endregion
 
 #region
@@ -44,7 +53,7 @@ println("The optimal initial prey population that returns the highest peak prey 
 function g(u,p)
 	α, β, γ, δ = p
 	x0 = u[1] 	# Optimization variable (initial predator population)
-	tspan = (0.0, 50.0) # the time span for the simulation
+	tspan = (0.0, 100.0) # the time span for the simulation
 
 	u0 = [x0, p[5]]
 	
@@ -55,16 +64,28 @@ function g(u,p)
 	return -peak_predator
 end
 
-p_pred = [.5, 1.0, 3.0, 1.0, 5.0] # α, β, γ, δ, x0 (initial prey population)
+p_pred = [.5, 1.0, 3.0, 1.0, 5.0] # α, β, γ, δ and initial prey population
 u0_pred = [5.0]
-lb_pred = [0.1]
-ub_pred = [50.0]
+lb_pred, ub_pred = [0.1], [50.0]
 
 opt_func_pred = OptimizationFunction(g, AutoZygote())
 opt_prob_pred = OptimizationProblem(opt_func_pred, u0_pred, p_pred; lb=lb_pred, ub=ub_pred)
 
-sol_pred = solve(opt_prob_pred, NelderMead())
+# Solving predator population optimization with multiple optimizers
+sol_pred_BBO = solve(opt_prob_pred, BBO_adaptive_de_rand_1_bin_radiuslimited())
+sol_pred_NM = solve(opt_prob_pred, NelderMead())
+sol_pred_LBFGS = solve(opt_prob_pred, LBFGS())
 
-println("Optimal Initial Predator Population: ", sol_pred.u[1])
-println("Maximum Peak Predator Population: ", -sol_pred.minimum)
+# Print results for predator optimization
+println("\nBBO Optimizer Results (Predators):")
+println("Optimal Initial Predator Population: ", sol_pred_BBO.u[1])
+println("Maximum Peak Predator Population: ", -sol_pred_BBO.minimum)
+
+println("\nNelder-Mead Optimizer Results (Predators):")
+println("Optimal Initial Predator Population: ", sol_pred_NM.u[1])
+println("Maximum Peak Predator Population: ", -sol_pred_NM.minimum)
+
+println("\nLBFGS Optimizer Results (Predators):")
+println("Optimal Initial Predator Population: ", sol_pred_LBFGS.u[1])
+println("Maximum Peak Predator Population: ", -sol_pred_LBFGS.minimum)
 #endregion"""
