@@ -1,0 +1,70 @@
+using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, Zygote, SciMLSensitivity, LineSearches
+
+# create the lotka_volterra function
+function lotka_volterra(du, u, p, t)
+    α, β, γ, δ = p
+    x, y = u
+    du[1] = α * x - β * x * y   # Prey population equation
+    du[2] = -γ * y + δ * x * y  # Predator population equation
+end
+
+#region 
+# Optimization of peak prey population with respect to the initial prey population
+function f(u,p)
+	α, β, γ, δ = p 		# Function parameters
+	x0 = u[1] 			# This is the optimization variable (initial prey population)
+	tspan = (0.0, 50.0) # Time span for the simulation
+
+	u0 = [x0, p[5]]		# Define the initial prey/predator populations
+	
+	prob = ODEProblem(lotka_volterra, u0, tspan, p[1:4]) # Define the ODE system
+	sol = solve(prob, Tsit5()) 	# Solve the ODE problem
+
+	peak_prey = maximum(sol[1, :]) # Extract the peak prey population from the ODE solution
+	return -peak_prey
+end
+
+p_prey = [.5, 1.0, 3.0, 1.0, 1.0] # Define parameter values for α, β, γ, δ and y0
+u0_prey = [5.0]		# Initial guess for prey population
+lb_prey, ub_prey = [0.1] , [50.0]
+
+opt_func_prey = OptimizationFunction(f, AutoZygote())
+opt_prob_prey = OptimizationProblem(opt_func_prey, u0_prey, p_prey; lb=lb_prey, ub=ub_prey)
+
+sol_prey = solve(opt_prob_prey, NelderMead())
+
+peak_prey_index = argmax(sol[1, :])[1]  # Index of the peak prey population
+peak_prey_time = sol.t[peak_prey_index]  # Corresponding time
+
+println("The optimal initial prey population that returns the highest peak prey population is: ", sol_prey.u[1], ", returning a peak prey population of ", -sol_prey.minimum, " at time ", peak_prey_time)
+#endregion
+
+#region
+# Optimization of peak predator population with respect to the initial predator population
+function g(u,p)
+	α, β, γ, δ = p
+	x0 = u[1] 	# Optimization variable (initial predator population)
+	tspan = (0.0, 50.0) # the time span for the simulation
+
+	u0 = [x0, p[5]]
+	
+	prob = ODEProblem(lotka_volterra, u0, tspan, p[1:4])
+	sol = solve(prob, Tsit5())
+
+	peak_predator = maximum(sol[2, :])
+	return -peak_predator
+end
+
+p_pred = [.5, 1.0, 3.0, 1.0, 5.0] # α, β, γ, δ, x0 (initial prey population)
+u0_pred = [5.0]
+lb_pred = [0.1]
+ub_pred = [50.0]
+
+opt_func_pred = OptimizationFunction(g, AutoZygote())
+opt_prob_pred = OptimizationProblem(opt_func_pred, u0_pred, p_pred; lb=lb_pred, ub=ub_pred)
+
+sol_pred = solve(opt_prob_pred, NelderMead())
+
+println("Optimal Initial Predator Population: ", sol_pred.u[1])
+println("Maximum Peak Predator Population: ", -sol_pred.minimum)
+#endregion"""

@@ -10,8 +10,8 @@ end
 
 
 init = [5.0, 5.0]   # Starting prey/predator populations
-params = [0.25031, 1.0, 3.0, 1.0]     # Parameter values for α, β, γ and δ
-tspan = (0.0, 100.0)  # Timespan for the simulation to run
+params = [0.5, 1.0, 3.0, 1.0]     # Parameter values for α, β, γ and δ
+tspan = (0.0, 50.0)  # Timespan for the simulation to run
 
 
 # Solve the ODE Problem using Tsit5, a specific 5th-order Runge-Kutta algorithm
@@ -21,7 +21,7 @@ sol = solve(prob, Tsit5())
 prey_vals = sol[1, :]
 pred_vals = sol[2, :]
 
-plt1 = plot(sol.t, prey_vals, label="Prey", linewidth=2, xlabel="Time", ylabel="Population", title="Lotka-Volterra System", size=(600,400), xlims=(0,100))
+plt1 = plot(sol.t, prey_vals, label="Prey", linewidth=2, xlabel="Time", ylabel="Population", title="Lotka-Volterra System", size=(600,400), xlims=(0,50))
 plot!(sol.t, pred_vals, label="Predator", linewidth=2)
 
-savefig(lotka_volterra_plot.png)
+savefig("lotka_volterra_plot.png")
