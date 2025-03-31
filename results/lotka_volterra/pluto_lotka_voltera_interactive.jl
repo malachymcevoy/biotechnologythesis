@@ -69,7 +69,7 @@ md"Adjust the sliders below to change the parameters and initial values:"
 # ╔═╡ d2dfc322-dd34-46ab-9991-a76985f0acb1
 begin
 	reset
-	α = @bind α Slider(0.1:0.01:2.0, default = 0.5, show_value=true)
+	α = @bind α Slider(0.0:0.01:2.0, default = 0.5, show_value=true)
 	β = @bind β Slider(0.1:0.01:1.0, default = 1.0, show_value=true)
 	γ = @bind γ Slider(0.1:0.01:3.0, default = 3.0, show_value=true)
 	δ = @bind δ Slider(0.1:0.01:2.0, default = 1.0, show_value=true)
@@ -102,8 +102,8 @@ end
 
 # ╔═╡ 448b6e32-e745-4f18-bba1-32fb9ece8b06
 begin
-	prob = ODEProblem(lotka_volterra, init, tspan, params)
-	sol = solve(prob)
+	prob = ODEProblem(lotka_volterra, init, tspan, params, isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
+	sol = solve(prob, Tsit5())
 	
 	plt1 = plot(sol.t, sol[1, :], label="Prey", linewidth=2, xlabel="Time", ylabel="Population", title="Population vs. Time", size=(600,400), xlims=(0,t_end))
 	plot!(sol.t, sol[2, :], label="Predator", linewidth=2)
@@ -2810,7 +2810,7 @@ version = "1.4.1+2"
 # ╟─cb96545b-cbb8-4e74-a73a-0bc826e9c5ae
 # ╟─7b9e1a27-a0a8-4d5e-9a44-fb5c412da813
 # ╟─a186903a-c124-4c78-b094-831987b6c92b
-# ╟─d2dfc322-dd34-46ab-9991-a76985f0acb1
+# ╠═d2dfc322-dd34-46ab-9991-a76985f0acb1
 # ╟─bc78147b-50a9-465e-969a-4d0191d4f6eb
 # ╟─44971249-97c7-4b66-90f8-7ee2d5322709
 # ╟─fd4aa34a-d5fa-4006-baee-4342f9922478

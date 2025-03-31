@@ -1,4 +1,4 @@
-using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, Zygote, SciMLSensitivity, LineSearches
+using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, Zygote, SciMLSensitivity, LineSearches, OptimizationBBO
 
 function lotka_volterra(du, u, p, t)
     α, β, γ, δ = p
@@ -11,13 +11,13 @@ function h(u,p)
 	α = u[1] # Optimization variable (α population)
 	β, γ, δ = p[1:3]
 	x0 = p[4]
-	y0 = p[5] # this is the fixed initial predator population
-	tspan = (0.0, 100.0) # the time span for the simulation
+	y0 = p[5]
+	tspan = (0.0, 100.0)
 
 	u0 = [x0, y0]
 	
 	#solve the ODE
-	prob = ODEProblem(lotka_volterra, u0, tspan, [α, β, γ, δ])
+	prob = ODEProblem(lotka_volterra, u0, tspan, [α, β, γ, δ]; isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
 	sol = solve(prob)
 
 	#extract the peak prey population
@@ -28,12 +28,26 @@ function h(u,p)
 end
 
 # define parameters
-p_α = [1.0, 3.0, 1.0, 5, 5] # β, γ, δ, prey_init, pred_init
+p_α = [1.0, 3.0, 1.0, 5.0, 5.0] # β, γ, δ, prey_init, pred_init
 u0_α = [1.0]
-lb_α = [0.25]
+lb_α = [0.26] # α value below 0.26 can result in system instability
 ub_α = [3.0]
 
 opt_func_α = OptimizationFunction(h, AutoZygote())
 opt_prob_α = OptimizationProblem(opt_func_α, u0_α, p_α; lb=lb_α, ub=ub_α)
 
-sol_α = solve(opt_prob_α, LBFGS(); g_tol=1e-10)
+opt_func_α_ipn = OptimizationFunction(h, AutoForwardDiff())
+opt_prob_α_ipn = OptimizationProblem(opt_func_α, u0_α, p_α; lb=lb_α, ub=ub_α)
+
+# Solve with different optimization algorithms
+sol_BBO = solve(opt_prob_α, BBO_adaptive_de_rand_1_bin_radiuslimited())
+sol_NM = solve(opt_prob_α, NelderMead())
+sol_LBFGS = solve(opt_prob_α, LBFGS())
+sol_IPN = solve(opt_prob_α_ipn, IPNewton())
+
+# Print results for each optimization algorithm
+println("Results for different optimization algorithms:")
+println("BBO_adaptive_de_rand_1_bin_radiuslimited: Optimal α = ", sol_BBO.u[1], ", Peak Prey Population = ", -sol_BBO.minimum)
+println("NelderMead: Optimal α = ", sol_NM.u[1], ", Peak Prey Population = ", -sol_NM.minimum)
+println("LBFGS: Optimal α = ", sol_LBFGS.u[1], ", Peak Prey Population = ", -sol_LBFGS.minimum)
+println("IPNewton: Optimal α = ", sol_IPN.u[1], ", Peak Prey Population = ", -sol_IPN.minimum)
