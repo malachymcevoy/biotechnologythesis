@@ -1,0 +1,44 @@
+using DifferentialEquations
+using Plots
+
+# Define the Lotka-Volterra ODE system
+function lotka_volterra!(du, u, p, t)
+    α, β, γ, δ = p
+    x, y = u
+    du[1] = α * x - β * x * y   # Prey population equation
+    du[2] = -γ * y + δ * x * y  # Predator population equation
+end
+
+# Set the parameter values (α, β, γ, δ) for different scenarios
+params = [
+    (α = 0.5, β = 0.02, γ = 0.5, δ = 0.02),
+    (α = 0.6, β = 0.01, γ = 0.4, δ = 0.03),
+    (α = 0.7, β = 0.03, γ = 0.3, δ = 0.04)
+]
+
+# Initial conditions for prey (x) and predator (y)
+u0 = [10.0, 5.0]  # Initial values of prey and predator populations
+
+# Time span for the simulation
+tspan = (0.0, 200.0)
+
+# Create an empty plot
+p = plot(xlabel="Prey Population", ylabel="Predator Population", legend=:topright)
+
+# Loop through different parameter values and solve the system
+for (i, p_vals) in enumerate(params)
+    α, β, γ, δ = p_vals
+    # Define the ODE problem with increased resolution
+    prob = ODEProblem(lotka_volterra!, u0, tspan, [α, β, γ, δ])
+
+    # Solve the ODE problem with increased tolerance for higher resolution
+    sol = solve(prob, Tsit5(), abstol=1e-8, reltol=1e-8, saveat=0.1)  # saveat specifies the time step
+    
+    # Plot the phase plot (Prey vs. Predator)
+    plot!(p, sol[1, :], sol[2, :], label="α=$α, β=$β, γ=$γ, δ=$δ", lw=2, title="Lotka-Volterra Predator Prey relationship")
+end
+
+# Show the plot
+display(p)
+
+savefig("lv_phase_plot.png")

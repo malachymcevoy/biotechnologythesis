@@ -95,7 +95,7 @@ end
 # ╔═╡ 071fdad1-0c47-42e7-b97d-795f4c4aa641
 begin
 	init = [prey_init, predator_init]  
-	params = [α, β, γ, δ] 
+	params = [α, β, γ, 0.005093643076928691] 
 	t_begin = 0
 	tspan = (t_begin, t_end)
 end

@@ -73,6 +73,7 @@ sol_pred_LBFGS = solve(opt_prob_pred, LBFGS())
 sol_pred_IPN = solve(opt_prob_pred, LBFGS())
 #endregion
 
+#region <<< Print results >>>
 # Print results for prey optimization
 println("BBO Optimizer Results (Prey):")
 println("Optimal Initial Prey Population: ", sol_prey_BBO.u[1])
@@ -106,3 +107,4 @@ println("Maximum Peak Predator Population: ", -sol_pred_LBFGS.minimum)
 println("\nIPN Optimizer Results (Predators):")
 println("Optimal Initial Predator Population: ", sol_pred_IPN.u[1])
 println("Maximum Peak Predator Population: ", -sol_pred_IPN.minimum)
+#endregion
