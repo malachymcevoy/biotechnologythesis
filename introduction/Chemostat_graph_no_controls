@@ -71,4 +71,5 @@ xlabel!("Time (hours)")
 ylabel!("GFP concentration (µM)")
 title!("GFP production by microchemostat system", titlefont=font(14, "Arial"))  # Adjust font size
 
-display("image/png", flux_fig)
+gr(fmt=:png, dpi=300)
+savefig("flux_fig")

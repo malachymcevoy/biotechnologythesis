@@ -144,7 +144,7 @@ phase = plot(sol, idxs = (1,2),
 );
 
 # ╔═╡ 84465733-c14a-442c-b98c-5e0f64df45e4
-scatter!(phase, (sol(t_end)[1], sol(t_end)[2]), color = :red, markersize = 5)
+scatter!(phase, (sol(t_end)[1], sol(t_end)[2]), color = :red, markersize = 5, xlims=(0, 100), ylims=(0,50))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """

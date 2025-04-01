@@ -1,0 +1,55 @@
+using Plots, DifferentialEquations, Statistics
+gr(fmt=:png, dpi=2000)
+
+function lotka_volterra(du, u, p, t)
+    α, β, γ, δ = p
+    x, y = u
+    du[1] = α * x - β * x * y
+    du[2] = -γ * y + δ * x * y
+end
+
+init = [5, 5] 
+params = [0.5, 1.0, 1.0, 0.5]
+t_end = 100
+tspan = (0.0, t_end)  
+
+prob = ODEProblem(lotka_volterra, init, tspan, params)
+sol = solve(prob, Tsit5(), saveat=0.1)
+
+prey_vals = sol[1, :]
+pred_vals = sol[2, :]
+
+# Find peak indices using second derivative sign change
+peak_indices = findall(diff(sign.(diff(prey_vals))) .< 0) .+ 1
+peak_times = sol.t[peak_indices]
+peak_values = prey_vals[peak_indices]
+
+# Compute period
+if length(peak_times) > 1
+    periods = diff(peak_times)
+
+    # Outlier Removal using Interquartile Range
+    q25, q75 = quantile(periods, [0.25, 0.75])
+    iqr = q75 - q25
+    lower_bound = q25 - 1.5 * iqr
+    upper_bound = q75 + 1.5 * iqr
+    filtered_periods = filter(x -> lower_bound ≤ x ≤ upper_bound, periods)
+
+    avg_period = mean(filtered_periods)
+else
+    avg_period = Inf  # No oscillations detected
+end
+
+println("Peak Times: ", peak_times)
+println("Peak Values: ", peak_values)
+println("Average Period (Filtered): ", avg_period)
+
+# Plot Prey and Predator Populations
+plt = plot(sol.t, prey_vals, label="Prey", linewidth=2, xlabel="Time", ylabel="Population",
+           title="Population vs. Time", size=(600,400), xlims=(0,t_end))
+plot!(sol.t, pred_vals, label="Predator", linewidth=2)
+
+# Overlay detected peaks
+scatter!(peak_times, peak_values, label="Peaks", markersize=5, color=:red)
+
+savefig("lv_oscillation_plot.png")

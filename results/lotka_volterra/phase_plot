@@ -41,4 +41,5 @@ end
 # Show the plot
 display(p)
 
+gr(fmt=:png, dpi=2000)
 savefig("lv_phase_plot.png")

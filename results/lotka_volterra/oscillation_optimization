@@ -1,0 +1,74 @@
+using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, OptimizationBBO, Zygote, SciMLSensitivity, LineSearches, FFTW, Statistics, ForwardDiff
+
+function lotka_volterra(du, u, p, t)
+    α, β, γ, δ = p
+    x, y = u
+    
+    du[1] = α * x - β * x * y
+    du[2] = -γ * y + δ * x * y
+end
+
+# Period estimation function
+function estimate_period_peaks(prey_vals, t_vals)
+    peak_indices = findall(diff(sign.(diff(prey_vals))) .< 0) .+ 1
+    peak_times = t_vals[peak_indices]
+
+    if length(peak_times) > 1
+        periods = diff(peak_times)
+    
+        # Outlier Removal using Interquartile Range
+        q25, q75 = quantile(periods, [0.25, 0.75])
+        iqr = q75 - q25
+        lower_bound = q25 - 1.5 * iqr
+        upper_bound = q75 + 1.5 * iqr
+        filtered_periods = filter(x -> lower_bound ≤ x ≤ upper_bound, periods)
+    
+        return mean(filtered_periods)
+    else
+        return Inf  # No oscillations detected
+    end
+end
+
+# Cost function to minimize the difference between desired & computed period
+function oscillation_period(u, p)
+    α, β, γ, δ = u
+    x0, y0 = p[1:2]
+    target_period = p[3]
+
+    tspan = (0, 100)
+    dt = 0.1
+
+    ODEProb = ODEProblem(lotka_volterra, [x0, y0], tspan, [α, β, γ, δ])
+    ODESol = solve(ODEProb, Tsit5(); saveat=dt)
+
+    prey_vals = ODESol[1, :]
+    computed_period = estimate_period_peaks(prey_vals, ODESol.t)
+
+    return abs(computed_period - target_period)  # Minimize this difference
+end
+
+# Initial conditions and parameter bounds
+p_init = [5.0, 5.0, 18]  # Initial prey, predator, and desired period
+u0_params = [0.5, 1.0, 3.0, 1.0]  # Initial α, β, γ, δ
+lb_params = [0.01, 0.01, 0.01, 0.01]  
+ub_params = [5.0, 5.0, 5.0, 5.0]  
+
+opt_func = OptimizationFunction(oscillation_period, AutoForwardDiff())
+opt_prob = OptimizationProblem(opt_func, u0_params, p_init; lb=lb_params, ub=ub_params)
+sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
+sol_NM = solve(opt_prob, NelderMead())
+sol_LBFGS = solve(opt_prob, LBFGS())
+sol_IPN = solve(opt_prob, IPNewton())
+
+for (name, sol) in [("Nelder-Mead", sol_NM), 
+    ("BBO", sol_BBO), 
+    ("L-BFGS", sol_LBFGS), 
+    ("IP Newton", sol_IPN)]
+println("\n=== Optimization using $name ===")
+println("Optimal parameters: α = $(sol.u[1]), β = $(sol.u[2]), γ = $(sol.u[3]), δ = $(sol.u[4])")
+optimized_period = oscillation_period(sol.u, p_init) + p_init[3]
+println("Optimized period: ", optimized_period)
+println("Difference between optimized period and target period: ", oscillation_period(sol.u, p_init))
+end
+
+sol_LBFGS.original

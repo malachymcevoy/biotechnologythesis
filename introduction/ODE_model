@@ -42,4 +42,5 @@ xlabel!("Time (hours)")
 ylabel!("μM of molecules")
 title!("ODE Model")
 
+gr(fmt=:png, dpi=2000)
 savefig("cellfree_ODE_fig.png")

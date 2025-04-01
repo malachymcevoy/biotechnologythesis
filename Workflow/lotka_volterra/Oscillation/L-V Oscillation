@@ -9,7 +9,7 @@ function lotka_volterra(du, u, p, t)
 end
 
 init = [5, 5] 
-params = [0.5142589425458219, 1.0585627635842612, 1.9836903240835775, 4.811826129302135]
+params = [0.5, 1.0, 1.0, 0.5]
 t_end = 100
 tspan = (0.0, t_end)  
 
