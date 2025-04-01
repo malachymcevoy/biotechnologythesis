@@ -1,4 +1,5 @@
 using DataFrames, DifferentialEquations, Plots, Optimization, OptimizationOptimJL, OptimizationBBO, Zygote
+gr(fmt=:png, dpi=300)
 
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
@@ -70,5 +71,5 @@ GFP_vs_energy_fig = plot(e0_range, max_Gm_values, label="Max GFP Produced",
                          ylabel="Max GFP (μM)",
                          title="GFP Production vs Initial Energy",
                          linewidth=2, legend=:topright)
-
 display(GFP_vs_energy_fig)
+savefig("GFP_vs_energy_fig")
