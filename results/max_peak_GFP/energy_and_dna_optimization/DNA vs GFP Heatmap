@@ -22,7 +22,7 @@ params = [2.0, 833.0, 4.0, 236.0, 1000.0, 0.2 / 20.0, 0.005 * (0.2 / 20.0),
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 
           3750.0, 54.75, 105.0, 100.0]
 
-energy_vals = range(1000.0, 60000.0, length=200)  # Adjust resolution as needed
+energy_vals = range(1000.0, 60000.0, length=200)
 dna_vals = range(0.001, 0.02, length=200)
 
 gfp_output = zeros(length(energy_vals), length(dna_vals))
@@ -45,11 +45,15 @@ for (i, e0) in enumerate(energy_vals)
 end
 
 # plot heatmap
-heat = heatmap(dna_vals, energy_vals, gfp_output, xlabel="DNA Concentration (μM)", ylabel="Energy Concentration (μM)",
-        title="GFP Output Heatmap", color=:viridis)
+heat = heatmap(dna_vals, energy_vals, gfp_output, 
+    xlabel="DNA Concentration (μM)", 
+    ylabel="Energy Concentration (μM)", 
+    title="Effect of DNA and energy concentration on GFP", 
+    color=:viridis, 
+    colorbar_title="GFP Output (μM)")
 
 # Plot contour map
-cont = contour(dna_vals, energy_vals, gfp_output, xlabel="DNA Concentration (μM)", ylabel="Energy Concentration (μM)",
-        title="GFP Output Contour", color=:viridis)
+"""cont = contour(dna_vals, energy_vals, gfp_output, xlabel="DNA Concentration (μM)", ylabel="Energy Concentration (μM)",
+        title="GFP Output Contour", color=:viridis)"""
 
-display(cont)
+savefig("DNA vs GFP Heatmap")
