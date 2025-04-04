@@ -1,6 +1,6 @@
 using DifferentialEquations, DiffEqCallbacks, Plots
+gr(fmt=:png, dpi=300)
 
-#region < ODE Model >
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
     e, D, m, cl, G, Gm, R = u
@@ -20,7 +20,6 @@ end
 initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params = [2.0, 833.0, 4.0, 236.0, 33600.0 * 0.0, 0.0, 0.005 * 0.0,
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
-#endregion
 
 #region < Discrete Dilution Callback >
 function discreteDilute!(integrator)
@@ -92,5 +91,6 @@ end
 # Customize the plot
 xlabel!("Time (hours)")
 ylabel!("GFP Concentration (μM)")
-title!("GFP Output at Different Tau Values")
-display("image/png", GFP_plot)
+title!("GFP Output at Different Dilution Intervals (τ)")
+
+savefig("Discrete_dilution_across_tau")
