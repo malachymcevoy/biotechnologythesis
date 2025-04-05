@@ -1,0 +1,103 @@
+using DataFrames, DifferentialEquations, Plots, Optimization, OptimizationOptimJL, Zygote, DiffEqCallbacks, SciMLSensitivity, OptimizationBBO
+
+# Define the model
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+function optimize_dilution_rate(x, p)
+    initial_conditions = [x[2], x[3], 0.0, 0.0, 0.0, 0.0, 1.51]
+    params = [2.0, 833.0, 4.0, 236.0, x[2] * 0.0, 0.0, x[3] * 0.0, 1000.0, 1.0, 0.038153465, 
+    0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
+    
+    u0 = initial_conditions
+    idx_e, idx_D_G, idx_m_G, idx_cl_G, idx_G, idx_G_m, idx_R = 1, 2, 3, 4, 5, 6, 7
+    
+    INDEX_DISC_A = [idx_e, idx_D_G, idx_R]
+    CONC_DISC_A = [u0[1], u0[2], u0[7]]
+    INDEX_DISC_B = [idx_e, idx_R]
+    CONC_DISC_B = [u0[1], u0[7]]
+    INDEX_DISC_C = [idx_e, idx_R]
+    CONC_DISC_C = [u0[1], u0[7]]
+    INDEX_CONT = [14, 15, 16]
+    CONC_CONT_A = [x[2], 0.0, 1.51]
+    CONC_CONT_B = [x[2], 0.0, 1.51]
+    dilSpecs = (INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C, INDEX_CONT, CONC_CONT_A, CONC_CONT_B)
+    
+
+    # Discrete dilution function (unchanged)
+    function discreteDilute!(integrator)
+        f_V, tau, s1, s2, tmax, tsave, nspecies, dilSpecs = integrator.p[end-7:end]
+        INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C, INDEX_CONT, CONC_CONT_A, CONC_CONT_B = dilSpecs
+    
+        if integrator.t < s1 * 60  # Stage 1
+            for j in 1:nspecies
+                integrator.u[j] *= (1 - f_V)  # Dilution by factor (1 - f_V)
+            end
+            for j in 1:length(INDEX_DISC_A)
+                integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]  # Add fresh material back in
+            end
+        elseif s1 * 60 <= integrator.t < s2 * 60  # Stage 2
+            for j in 1:nspecies
+                integrator.u[j] *= (1 - f_V)
+            end
+            for j in 1:length(INDEX_DISC_B)
+                integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
+            end
+        elseif s2 * 60 <= integrator.t  # Stage 3
+            for j in 1:nspecies
+                integrator.u[j] *= (1 - f_V)
+            end
+            for j in 1:length(INDEX_DISC_C)
+                integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+            end
+        end
+    end
+    
+    f_V = 0.2  # Dilution fraction
+    tau, s1, s2, tmax, tsave, nspecies = x[1], 9.0, 0.0, 20.0, 100.0, 7
+    params_with_dilution = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies, dilSpecs])
+
+
+    # Correct usage of the PeriodicCallback
+    periodcb = PeriodicCallback(discreteDilute!, tau; save_positions=(false,false))
+    cb = CallbackSet(periodcb)
+
+    # Define the ODE problem
+    prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_with_dilution)
+    sol = solve(prob, RadauIIA5(), callback=periodcb, saveat=1.0)
+    
+    # Extract the maximum GFP produced
+    max_Gm = maximum(sol[6, :])
+    
+    return -max_Gm  # Return negative value for minimization
+end
+
+# Initial guess and bounds for optimization
+x_initial = [20.0, 33600.0, 0.015]
+lb, ub = [10.0, 1000.0, 0.001], [150.0, 60000.0, 0.02]
+
+# Set up the optimization problem
+opt_func = OptimizationFunction(optimize_dilution_rate, AutoForwardDiff())
+opt_prob = OptimizationProblem(opt_func, x_initial; lb=lb, ub=ub)
+
+# Solve the optimization problem
+sol = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited(), maxiters=100)
+
+# Output the results
+println("Optimum tau: ", sol.u[1])
+println("Optimum initial energy concentration (e0): ", sol.u[2])
+println("Optimum initial DNA concentration (D0): ", sol.u[3])
+println("Max GFP produced: ", -sol.objective)
