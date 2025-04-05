@@ -57,7 +57,7 @@ def create_3d_scatter_plot():
     
     print(f"Generated {len(gfp_vals)} valid data points")
     
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111, projection='3d')
     
     dna = [point[0] for point in raw_points]
@@ -74,7 +74,7 @@ def create_3d_scatter_plot():
     ax.set_zlabel('Dilution Interval τ (min)')
     ax.set_title('3D Scatter Plot of GFP Production')
     
-    cbar = plt.colorbar(sc, ax=ax, pad=0.1)
+    cbar = plt.colorbar(sc, ax=ax, pad=0.1, shrink=0.7)
     cbar.set_label('Peak GFP Level')
     
     max_idx = np.argmax(gfp_vals) if gfp_vals else None
@@ -83,7 +83,7 @@ def create_3d_scatter_plot():
                 f'Max GFP: {gfp_vals[max_idx]:.2f}',
                 fontsize=10, color='red')
     
-    plt.savefig('gfp_3d_scatter_plot.png', dpi=300, bbox_inches='tight')
+    plt.savefig('gfp_3d_scatter_plot.png', dpi=400)
     plt.show()
 
 create_3d_scatter_plot()
