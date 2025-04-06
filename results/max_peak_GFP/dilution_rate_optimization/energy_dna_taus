@@ -101,7 +101,7 @@ end
 
 xlabel!("Time (hours)")
 ylabel!("Energy Concentration (μM)")
-title!("Energy Change at Different Tau Values")
+title!("Energy Concentration at Different Tau Values")
 
 # Create the plot for DNA (D output) at different tau values
 DNA_plot = plot()
@@ -120,8 +120,8 @@ end
 
 xlabel!("Time (hours)")
 ylabel!("DNA Concentration (μM)")
-title!("DNA Output at Different Tau Values")
+title!("DNA Concentration at Different Tau Values")
 
 # Combine and save plots
 combined_plot = plot(energy_plot, DNA_plot, layout=(1, 2), dpi=300)
-savefig(combined_plot, "side_by_side_plots.png")
+savefig(combined_plot, "energy_dna_taus.png")
