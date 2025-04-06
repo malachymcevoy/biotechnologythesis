@@ -40,7 +40,7 @@ CONC_CONT_B = [33600.0, 0.0, 1.51]
 dilSpecs = (INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C, INDEX_CONT, CONC_CONT_A, CONC_CONT_B)
 
 f_V = 0.2
-tau, s1, s2, tmax, tsave, nspecies = 20, 9.0, 0.0, 20.0, 100.0, 7.0
+tau, s1, s2, tmax, tsave, nspecies = 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 # Update discrete dilution callback to properly access the global dilSpecs
 function discreteDilute!(integrator)
@@ -53,23 +53,23 @@ function discreteDilute!(integrator)
     tsave = p[end - 1]
     nspecies = p[end]    
     # Adjust dilution logic based on dynamic time control
-    if integrator.t < s1 * 60  # Stage 1
+    if integrator.t < s1 * 60.0  # Stage 1
         for j in 1:7
             integrator.u[j] *= (1.0 - f_V)  # Dilution by factor (1 - f_V)
         end
         for j in 1:length(INDEX_DISC_A)
             integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]  # Add fresh material back in
         end
-    elseif s1 * 60 <= integrator.t < s2 * 60  # Stage 2
+    elseif s1 * 60 <= integrator.t < s2 * 60.0  # Stage 2
         for j in 1:7
-            integrator.u[j] *= (1 - f_V)
+            integrator.u[j] *= (1.0 - f_V)
         end
         for j in 1:length(INDEX_DISC_B)
             integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
         end
     else  # Stage 3
         for j in 1:7
-            integrator.u[j] *= (1 - f_V)
+            integrator.u[j] *= (1.0 - f_V)
         end
         for j in 1:length(INDEX_DISC_C)
             integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
@@ -86,7 +86,7 @@ end
 function optimize_dilution_rate(x, p)
     params_flat = vcat(params, [f_V, x[1], s1, s2, tmax, tsave, nspecies])
     
-    periodcb = get_callback(x[1])
+    periodcb = get_callback(value(x[1]))
     
     prob = ODEProblem(model!, u0, (0.0, 1000.0), params_flat)
     sol = solve(prob, Tsit5(), callback=periodcb, saveat=1.0)
@@ -105,12 +105,12 @@ opt_prob = OptimizationProblem(opt_func, x_initial; lb=lb, ub=ub)
 sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited(), maxiters=100)
 sol_LBFGS = solve(opt_prob, LBFGS(), maxiters=100)
 sol_NM = solve(opt_prob, NelderMead(), maxiters=100)
+sol_IPN = solve(opt_prob, IPNewton(), maxiters=100)
 
 # Print the results
 println("Results from BBO:")
 println("Optimum dilution interval τ: ", sol_BBO.u[1])
 println("Max GFP produced: ", -sol_BBO.objective)
-println("Optimization success: ", sol_BBO.success)
 
 println("\nResults from LBFGS:")
 println("Optimum dilution interval τ: ", sol_LBFGS.u[1])
@@ -119,3 +119,7 @@ println("Max GFP produced: ", -sol_LBFGS.objective)
 println("\nResults from NelderMead:")
 println("Optimum dilution interval τ: ", sol_NM.u[1])
 println("Max GFP produced: ", -sol_NM.objective)
+
+println("Results from IPNewton:")
+println("Optimum dilution interval τ: ", sol_IPN.u[1])
+println("Max GFP produced: ", -sol_IPN.objective)
