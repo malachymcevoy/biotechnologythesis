@@ -18,12 +18,10 @@ function model!(du, u, p, t)
     du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
 end
 
-# Define initial conditions and parameters
 initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params = [2.0, 833.0, 4.0, 236.0, 33600.0 * 0.0, 0.0, 0.005 * 0.0,
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
 
-# Define indices and concentrations for dilution stages
 u0 = initial_conditions
 idx_e, idx_D_G, idx_m_G, idx_cl_G, idx_G, idx_G_m, idx_R = 1, 2, 3, 4, 5, 6, 7
 
