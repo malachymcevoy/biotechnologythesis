@@ -42,7 +42,6 @@ dilSpecs = (INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, 
 f_V = 0.2
 tau, s1, s2, tmax, tsave, nspecies = 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
-# Update discrete dilution callback to properly access the global dilSpecs
 function discreteDilute!(integrator)
     p = integrator.p
     f_V = p[end - 6]
@@ -52,15 +51,14 @@ function discreteDilute!(integrator)
     tmax = p[end - 2]
     tsave = p[end - 1]
     nspecies = p[end]    
-    # Adjust dilution logic based on dynamic time control
-    if integrator.t < s1 * 60.0  # Stage 1
+    if integrator.t < s1 * 60.0
         for j in 1:7
-            integrator.u[j] *= (1.0 - f_V)  # Dilution by factor (1 - f_V)
+            integrator.u[j] *= (1.0 - f_V)
         end
         for j in 1:length(INDEX_DISC_A)
-            integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]  # Add fresh material back in
+            integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
         end
-    elseif s1 * 60 <= integrator.t < s2 * 60.0  # Stage 2
+    elseif s1 * 60 <= integrator.t < s2 * 60.0
         for j in 1:7
             integrator.u[j] *= (1.0 - f_V)
         end
