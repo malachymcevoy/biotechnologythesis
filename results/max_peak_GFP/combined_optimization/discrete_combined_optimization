@@ -80,17 +80,17 @@ function optimizer(x, p)
     periodcb = get_callback(value(x[1]))
 
     prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_flat)
-    sol = solve(prob, Tsit5(), callback=periodcb, saveat=1.0)
+    sol = solve(prob, RadauIIA5(), callback=periodcb, saveat=1.0)
     
     max_Gm = maximum(sol[6, :])
     
     return -max_Gm
 end
 
-x_initial = [20.0, 33600.0, 0.015]
+x_initial = [100.0, 55000.0, 0.012]
 lb, ub = [10.0, 1000.0, 0.001], [150.0, 60000.0, 0.02]
 
-opt_func = OptimizationFunction(optimize_dilution_rate, AutoForwardDiff())
+opt_func = OptimizationFunction(optimizer, AutoForwardDiff())
 opt_prob = OptimizationProblem(opt_func, x_initial; lb=lb, ub=ub)
 
 sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
