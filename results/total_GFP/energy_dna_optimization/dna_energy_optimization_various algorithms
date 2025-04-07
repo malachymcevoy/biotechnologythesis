@@ -1,0 +1,70 @@
+using DataFrames, DifferentialEquations, Plots, Optimization, OptimizationOptimJL, OptimizationBBO, Zygote
+
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    Din = t < 540 ? Din_init : 0.0
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e  # Energy balance
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+x_initial = [33600.0, 0.005]  # Initial guess for [e0, D0]
+lb, ub = [1000.0, 0.001], [60000.0, 0.02]  # Bounds for energy and DNA concentration
+
+initial_conditions = [x_initial[1], x_initial[2], 0.0, 0.0, 0.0, 0.0, 1.51]
+params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0), (0.2 / 20.0), initial_conditions[2] * (0.2 / 20.0),
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
+
+function optimize_initial_energy(x, p)
+    init_cond = [x[1], x[2], 0.0, 0.0, 0.0, 0.0, 1.51]
+
+    params = [2.0, 833.0, 4.0, 236.0, x[1] * (0.2 / 20.0), (0.2 / 20.0), x[2] * (0.2 / 20.0),
+    1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
+
+    prob = ODEProblem(model!, init_cond, (0.0, 1000.0), params)
+    sol = solve(prob, RadauIIA5(), saveat=1.0)
+
+    tot_Gm = sum(sol[6, :])
+    return -tot_Gm
+end
+
+opt_func = OptimizationFunction(optimize_initial_energy, Optimization.AutoForwardDiff())
+opt_prob = OptimizationProblem(opt_func, x_initial, params; lb=lb, ub=ub)
+
+
+# Solve optimization problem with different algorithms
+sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
+sol_NM = solve(opt_prob, NelderMead())
+sol_LBFGS = solve(opt_prob, LBFGS())
+sol_IPN = solve(opt_prob, IPNewton())
+
+# Extract and print results for each method
+for (name, sol) in [("BBO", sol_BBO), ("Nelder-Mead", sol_NM), ("LBFGS", sol_LBFGS), ("IPNewton", sol_IPN)]
+    println("[$name] Termination Status: ", sol.retcode)
+
+    if !isnothing(sol.u)
+        optimal_e0, optimal_D0 = sol.u
+        println("[$name] Optimum initial energy concentration: ", optimal_e0)
+        println("[$name] Optimum initial DNA concentration: ", optimal_D0)
+    else
+        println("[$name] No valid solution found.")
+    end
+
+    if !isnothing(sol.objective)
+        println("[$name] Total GFP produced using these concentrations: ", -sol.objective)
+    else
+        println("[$name] Objective function value not available.")
+    end
+    
+    println()
+end

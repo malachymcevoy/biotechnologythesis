@@ -1,0 +1,68 @@
+using DataFrames, DifferentialEquations, Plots, Optimization, OptimizationOptimJL, OptimizationBBO, Zygote, SciMLSensitivity
+
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    Din = t < 540 ? Din_init : 0.0
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+function optimize_initial_energy(e0, p)
+    init_cond = [e0[1], 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+    updated_params = [2.0, 833.0, 4.0, 236.0, init_cond[1] * (0.2 / 20.0), (0.2 / 20.0), 0.005 * (0.2 / 20.0),
+    1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
+
+    prob = ODEProblem(model!, init_cond, (0.0, 1000.0), updated_params)
+    sol = solve(prob, RadauIIA5(), saveat=1.0)
+
+    tot_Gm = sum(sol[6, :])
+    return -tot_Gm
+end
+
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]  # e0 is now the variable we optimize
+params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0), (0.2 / 20.0), 0.005 * (0.2 / 20.0),
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
+          
+e0_initial = [33600.0]  # Initial guess for initial energy concentration
+lb, ub = [1000.0], [60000.0]
+
+opt_func = OptimizationFunction(optimize_initial_energy, AutoForwardDiff())
+opt_prob = OptimizationProblem(opt_func, e0_initial, params; lb=lb, ub=ub)
+
+sol_NM = solve(opt_prob, NelderMead(); maxiters=100)
+sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited(); maxiters=100)
+sol_LBFGS = solve(opt_prob, LBFGS(); maxiters=100)
+sol_IPN = solve(opt_prob, IPNewton(); maxiters=100)
+
+println("\n--- Optimization Results ---")
+for (name, sol) in [("Nelder-Mead", sol_NM), 
+                    ("BBO", sol_BBO), 
+                    ("L-BFGS", sol_LBFGS), 
+                    ("IPNewton", sol_IPN)]
+
+    println("Algorithm: ", name)
+    println("  Termination Status: ", sol.retcode)
+
+    if !isnothing(sol.u)
+        println("  Optimum initial energy concentration: ", sol.u[1])
+    else
+        println("  No valid solution found.")
+    end
+
+    if !isnothing(sol.objective)
+        println("  Total GFP produced using this energy concentration: ", -sol.objective, "\n")
+    else
+        println("  Objective function value not available.\n")
+    end
+end

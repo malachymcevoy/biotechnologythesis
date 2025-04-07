@@ -51,9 +51,5 @@ heat = heatmap(dna_vals, energy_vals, gfp_output,
     title="Effect of DNA and energy concentration on GFP", 
     color=:viridis, 
     colorbar_title="GFP Output (μM)")
-
-# Plot contour map
-"""cont = contour(dna_vals, energy_vals, gfp_output, xlabel="DNA Concentration (μM)", ylabel="Energy Concentration (μM)",
-        title="GFP Output Contour", color=:viridis)"""
-
-savefig("DNA vs GFP Heatmap")
+    
+savefig("dna_energy_vs_max_gfp_heatmap")

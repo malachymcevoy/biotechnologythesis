@@ -3,7 +3,7 @@ using DifferentialEquations
 using Plots
 
 function model!(du, u, p, t)
-    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl, qx_energy, ql_energy = p
+    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
     e, D, m, cl, G, Gm, R, E_tx, E_tl = u  
 
     Din = t < 540 ? Din_init : 0.0
@@ -11,8 +11,8 @@ function model!(du, u, p, t)
     vtx = D * (ktx / ng) * (e / (Ktx + e))  # Transcription rate
     vtl = cl * (ktl / nG) * (e / (Ktl + e)) # Translation rate
 
-    E_tx_rate = vtx * qx * ng * qx_energy  # Energy consumed by transcription
-    E_tl_rate = vtl * ql * nG * ql_energy  # Energy consumed by translation
+    E_tx_rate = vtx * qx * ng  # Energy consumed by transcription
+    E_tl_rate = vtl * ql * nG  # Energy consumed by translation
 
     du[1] = - (E_tx_rate + E_tl_rate) + ein - mu * e
     du[2] = Din - mu * D
@@ -27,8 +27,7 @@ end
 
 initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51, 0.0, 0.0]
 params = [2.0, 833.0, 4.0, 236.0, 33600.0 * (0.2 / 20.0), (0.2 / 20.0), 0.005 * (0.2 / 20.0),
-          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0,
-          1.5, 4.0]  # qx_energy (Energy per transcription), ql_energy (Energy per translation)
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
 
 dna_concentrations = [0.005, 0.01, 0.02]
 colors = [:red, :blue, :green]

@@ -1,0 +1,49 @@
+using DataFrames, DifferentialEquations, Plots
+
+# Define the ODE model (same as before)
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    Din = t < 540 ? Din_init : 0.0
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e  # Energy balance
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+# Initial conditions and parameters
+initial_conditions = [33600, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0), (0.2 / 20.0), initial_conditions[2] * (0.2 / 20.0),
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
+
+# Range of DNA concentrations to test
+dna_vals = range(0.001, 0.02, length=1000)  # 100 values for better resolution
+gfp_output = zeros(length(dna_vals))
+
+# Loop over DNA concentrations and solve the ODE for each
+for (i, D0) in enumerate(dna_vals)
+    modified_initial_conditions = copy(initial_conditions)
+    modified_initial_conditions[2] = D0
+
+    modified_parameters = copy(params)
+    modified_parameters[7] = D0 * (0.2 / 20.0)
+    
+    prob = ODEProblem(model!, modified_initial_conditions, (0.0, 1000.0), modified_parameters)
+    sol = solve(prob, RadauIIA5(), saveat=1.0)
+
+    gfp_output[i] = sum(sol[6, :])
+end
+
+plot(dna_vals, gfp_output, xlabel="DNA Concentration (μM)", ylabel="Total GFP Output",
+     title="Effect of DNA Concentration on Total GFP", label="Total GFP",
+     color=:viridis, linewidth=2)
+
+savefig("DNA_vs_total_GFP")
