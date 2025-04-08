@@ -30,7 +30,6 @@ function optimizer(x, p)
                    1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0),
                    3750.0, 54.75, 105.0, 100.0]
 
-    # Dilution specs (constant across runs)
     dilSpecs = (
         [1, 2, 7], [x[1], x[2], 1.51],
         [1, 7],    [x[1], 1.51],
@@ -83,7 +82,7 @@ params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0),
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0),
           3750.0, 54.75, 105.0, 100.0]
 
-x_initial = [55000.0, 0.03]
+x_initial = [50000.0, 0.02]
 lb, ub = [1000.0, 0.001], [60000.0, 0.05]
 
 opt_func = OptimizationFunction(optimizer, Optimization.AutoForwardDiff())

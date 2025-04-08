@@ -17,7 +17,6 @@ function model!(du, u, p, t)
     du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
 end
 
-# GFP production rate function
 function gfp_production_rate(u, p)
     _, ng, _, nG, _, _, _, _, _, _, _, _, _, _, _, Ktl = p[1:16]
     cl = u[4]
@@ -26,7 +25,6 @@ function gfp_production_rate(u, p)
     return cl * (ktl / nG) * (e / (Ktl + e))
 end
 
-# Dilution callback function
 function make_discrete_dilute!(dilSpecs)
     return function (integrator)
         p = integrator.p
@@ -54,7 +52,7 @@ function make_discrete_dilute!(dilSpecs)
 end
 
 # === Setup ===
-initial_conditions = [33600.0, 0.03, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [60000, 0.049999, 0.0, 0.0, 0.0, 0.0, 1.51]
 params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0),
                (0.2 / 20.0), 0.005 * (0.2 / 20.0),
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0),
@@ -64,36 +62,25 @@ f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 # Dilution specs (constant across runs)
 dilSpecs = (
-        [1, 2, 7], [initial_conditions[1], 0.005, 1.51],    # DISC_A
-        [1, 7],    [initial_conditions[1], 1.51],           # DISC_B
-        [1, 7],    [initial_conditions[1], 1.51]            # DISC_C
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],    # DISC_A
+        [1, 7],    [initial_conditions[1], 1.51],                           # DISC_B
+        [1, 7],    [initial_conditions[1], 1.51]                            # DISC_C
     )
 
 params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
 
-# Periodic dilution callback setup
 cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
-# ODE Problem setup
 prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_flat)
 
-# Solve the ODE
 sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
 
-# Initialize total GFP production
 total_gfp_production = 0.0
 
-# Calculate total GFP production over time
 for i in 2:length(sol.t)
     dt = sol.t[i] - sol.t[i-1]
     production_rate = gfp_production_rate(sol.u[i-1], params_flat)
     total_gfp_production += production_rate * dt
 end
 
-# Output total GFP production
 println("Total GFP produced: ", total_gfp_production)
-
-# Plot ODE values (apart from energy, i.e., columns 2 to 7 for D, m, cl, G, Gm, R)
-plot(sol.t, hcat(sol.u[2, :], sol.u[3, :], sol.u[4, :], sol.u[5, :], sol.u[6, :], sol.u[7, :]), 
-     label=["D (DNA)" "m (mRNA)" "cl (Protein)" "G (GFP)" "Gm (GFP precursor)" "R (Repressor)"],
-     xlabel="Time", ylabel="Concentration", title="Concentration vs Time")
