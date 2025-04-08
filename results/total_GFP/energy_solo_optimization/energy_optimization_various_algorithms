@@ -52,10 +52,10 @@ lb, ub = [1000.0], [60000.0]
 opt_func = OptimizationFunction(optimize_initial_energy, AutoForwardDiff())
 opt_prob = OptimizationProblem(opt_func, e0_initial, params; lb=lb, ub=ub)
 
-sol_NM = solve(opt_prob, NelderMead(); maxiters=100)
-sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited(); maxiters=100)
-sol_LBFGS = solve(opt_prob, LBFGS(); maxiters=100)
-sol_IPN = solve(opt_prob, IPNewton(); maxiters=100)
+sol_NM = solve(opt_prob, NelderMead())
+sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
+sol_LBFGS = solve(opt_prob, LBFGS())
+sol_IPN = solve(opt_prob, IPNewton())
 
 println("\n--- Optimization Results ---")
 for (name, sol) in [("Nelder-Mead", sol_NM), 
