@@ -22,14 +22,13 @@ initial_conditions = [33600, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0), (0.2 / 20.0), 0.005 * (0.2 / 20.0),
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
 
-e0_range = range(0.0, 60000.0, length=50)
+e0_range = range(0.0, 60000.0, length=1000)
 total_Gm_values = Float64[]
 
 for e0 in e0_range
     init_cond = copy(initial_conditions)
-    init_cond[1] = e0  # Set new initial energy concentration
+    init_cond[1] = e0
 
-    # Update parameters with new ein value
     new_params = copy(params)
     new_params[5] = e0 * (0.2 / 20.0)  # Ensure ein scales properly
 
@@ -57,4 +56,4 @@ GFP_vs_energy_fig = plot(e0_range, total_Gm_values, label="Total GFP Produced",
                          title="Total GFP Production vs Initial Energy",
                          linewidth=2, legend=:topleft)
 
-display(GFP_vs_energy_fig)
+savefig("energy_vs_total_gfp")

@@ -54,7 +54,7 @@ function compute_gfp(tau)
     return sum(sol[6, :])
 end
 
-taus = 10.0:10.0:300.0
+taus = 10.0:10.0:1000.0
 gfp_production = [compute_gfp(tau) for tau in taus]
 
 optimal_tau = taus[argmax(gfp_production)]
