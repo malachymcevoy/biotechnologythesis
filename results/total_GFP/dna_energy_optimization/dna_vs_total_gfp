@@ -50,7 +50,7 @@ function make_discrete_dilute!(dilSpecs)
 end
 
 # === Setup ===
-initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [60000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0),
                (0.2 / 20.0), 0.005 * (0.2 / 20.0),
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0),
