@@ -1,15 +1,13 @@
 using DataFrames, DifferentialEquations, CairoMakie, Colors
 
 function model!(du, u, p, t)
-    qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p[1:16]
     e, D, m, cl, G, Gm, R = u
-
-    Din = t < 540 ? Din_init : 0.0
 
     vtx = D * (ktx / ng) * (e / (Ktx + e))
     vtl = cl * (ktl / nG) * (e / (Ktl + e))
 
-    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e  # Energy balance
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
     du[2] = Din - mu * D
     du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
     du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
@@ -51,7 +49,7 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-params = [2.0, 833.0, 4.0, 236.0, 1000.0, 0.2 / 20.0, 0.005 * (0.2 / 20.0), 
+params = [2.0, 833.0, 4.0, 236.0, 0.0, 0.0, 0.0, 
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 
           3750.0, 54.75, 105.0, 100.0]
 
@@ -102,7 +100,7 @@ ax = Axis(f[1, 1],
     titlesize=14, xlabelsize=12, ylabelsize=12, xticklabelsize=10, yticklabelsize=10
 )
 
-hm = heatmap!(ax, dna_vals, energy_vals, total_Gm_values'; colormap=:viridis)
+hm = heatmap!(ax, dna_vals, energy_vals, total_Gm_values; colormap=:viridis)
 Colorbar(f[1, 2], hm, label="Total GFP Output (μM)", labelsize=12, ticklabelsize=10)
 
-savefig("dna_energy_vs_total_gfp_heatmap.png")
+CairoMakie.save("dna_energy_total_gfp_heatmap.png", f)
