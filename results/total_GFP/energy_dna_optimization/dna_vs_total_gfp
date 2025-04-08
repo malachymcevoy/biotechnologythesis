@@ -25,7 +25,7 @@ params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0), (0.2 / 2
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 3750.0, 54.75, 105.0, 100.0]
 
 # Range of DNA concentrations to test
-dna_vals = range(0.001, 0.02, length=1000)  # 100 values for better resolution
+dna_vals = range(0.001, 0.05, length=2000)
 gfp_output = zeros(length(dna_vals))
 
 # Loop over DNA concentrations and solve the ODE for each
@@ -46,4 +46,4 @@ plot(dna_vals, gfp_output, xlabel="DNA Concentration (μM)", ylabel="Total GFP O
      title="Effect of DNA Concentration on Total GFP", label="Total GFP",
      color=:viridis, linewidth=2)
 
-savefig("DNA_vs_total_GFP")
+savefig("dna_vs_total_GFP")

@@ -1,4 +1,5 @@
-using DataFrames, DifferentialEquations, Optimization, OptimizationOptimJL, OptimizationBBO, Zygote, CairoMakie, Colors
+using DataFrames, DifferentialEquations, Plots, Optimization, OptimizationOptimJL, OptimizationBBO, Zygote
+gr(fmt=:png, dpi=300)
 
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din_init, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
@@ -44,16 +45,18 @@ for (i, e0) in enumerate(energy_vals)
     end
 end
 
-f = Figure(resolution=(800, 600))
-ax = Axis(f[1, 1], 
-    title="Effect of DNA and energy concentration on Total GFP Production",
+heat = heatmap(
+    dna_vals, 
+    energy_vals, 
+    gfp_output, 
     xlabel="DNA Concentration (μM)", 
-    ylabel="Energy Concentration (μM)",
-    titlesize=14, xlabelsize=12, ylabelsize=12, xticklabelsize=10, yticklabelsize=10
+    ylabel="Energy Concentration (μM)", 
+    title="Effect of DNA and energy concentration on Total GFP Production", 
+    color=:viridis, 
+    colorbar_title="Total GFP Output (μM)",
+    titlefontsize=10,
+    guidefontsize=8,
+    tickfontsize=7
 )
 
-hm = CairoMakie.heatmap!(ax, dna_vals, energy_vals, gfp_output'; colormap=:viridis)
-
-Colorbar(f[1, 2], hm, label="Total GFP Output (μM)", labelsize=12, ticklabelsize=10)
-
-save("dna_energy_vs_total_gfp_heatmap.png", f)
+show(heat)
