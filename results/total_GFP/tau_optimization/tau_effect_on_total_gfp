@@ -50,13 +50,13 @@ function make_discrete_dilute!(dilSpecs)
 end
 
 # === Setup ===
-initial_conditions = [60000.0, 0.02, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [33600, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                0.0, initial_conditions[2] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 
-tau_range = 10.0:10.0:1000.0
+tau_range = 5.0:5.0:100.0
 total_Gm_values = Float64[]
 
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
@@ -78,7 +78,7 @@ for tau_vals in tau_range
     total_gfp_production = 0.0
     for i in 2:length(sol.t)
         dt = sol.t[i] - sol.t[i-1]
-        production_rate = gfp_production_rate(sol.u[i-1], modified_parameters)
+        production_rate = gfp_production_rate(sol.u[i-1], params_base)
         total_gfp_production += production_rate * dt
     end
 
@@ -92,7 +92,7 @@ tau_at_max_gfp = tau_range[max_index]
 println("Optimal dilution interval (τ): ", tau_at_max_gfp, " minutes")
 println("Maximum total GFP produced: ", max_total_gfp)
 
-plot(tau_vals, total_Gm_values, xlabel="Dilution Interval (minutes)", ylabel="Total GFP Production (µM)",
+plot(tau_range, total_Gm_values, xlabel="Dilution Interval (minutes)", ylabel="Total GFP Production (µM)",
      title="Effect of Dilution Interval on Total GFP Production", lw=2, legend=false)
 
 savefig("tau_effect_on_total_gfp.png")
