@@ -51,12 +51,12 @@ end
 
 # === Setup ===
 initial_conditions = [60000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
-params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0),
+ params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0),
                (0.2 / 20.0), initial_conditions[2] * (0.2 / 20.0),
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0),
                3750.0, 54.75, 105.0, 100.0]
 
-dna_vals = range(0.001, 0.05, length=1000)
+dna_vals = range(0.001, 0.1, length=1000)
 total_Gm_values = Float64[]
 
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
@@ -70,9 +70,9 @@ for D0 in dna_vals
     modified_parameters[7] = D0 * (0.2 / 20.0)
     
     dilSpecs = (
-        [1, 2, 7], [33600, D0, 1.51],       # DISC_A
-        [1, 7],    [33600, 1.51],           # DISC_B
-        [1, 7],    [33600, 1.51]            # DISC_C
+        [1, 2, 7], [initial_conditions[1], D0, 1.51],       # DISC_A
+        [1, 7],    [initial_conditions[1], 1.51],           # DISC_B
+        [1, 7],    [initial_conditions[1], 1.51]            # DISC_C
     )
 
     params_flat = vcat(modified_parameters, [f_V, tau, s1, s2, tmax, tsave, nspecies])
@@ -107,4 +107,4 @@ dna_vs_energy_fig = plot(dna_vals, total_Gm_values, label="Total GFP Produced",
 
 scatter!([DNA_at_max_gfp], [max_total_gfp], label="Max", marker=:star5, color=:red)
 
-savefig("dna_vs_total_gfp.png")
+# savefig("dna_vs_total_gfp.png")

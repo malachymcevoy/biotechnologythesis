@@ -56,7 +56,8 @@ params = [2.0, 833.0, 4.0, 236.0, 0.0, 0.0, 0.0,
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 energy_vals = range(1000.0, 60000.0, length=200)  # Energy concentration range
-dna_vals = range(0.001, 0.05, length=200)        # DNA concentration range
+dna_vals = range(0.001, 0.05, length=200)         # DNA concentration range
+
 total_Gm_values = zeros(Float64, length(dna_vals), length(energy_vals))
 
 # Iterate over each combination of DNA concentration (D0) and Energy concentration (e0)
@@ -102,5 +103,5 @@ ax = Axis(f[1, 1],
 
 hm = heatmap!(ax, dna_vals, energy_vals, total_Gm_values; colormap=:viridis)
 Colorbar(f[1, 2], hm, label="Total GFP Output (μM)", labelsize=12, ticklabelsize=10)
-
-CairoMakie.save("dna_energy_total_gfp_heatmap.png", f)
+display(hm)
+# CairoMakie.save("dna_energy_total_gfp_heatmap.png", f)

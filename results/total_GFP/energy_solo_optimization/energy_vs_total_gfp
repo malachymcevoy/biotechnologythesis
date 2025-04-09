@@ -51,9 +51,9 @@ function make_discrete_dilute!(dilSpecs)
 end
 
 # === Setup ===
-initial_conditions = [33600.0, 0.03, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [33600.0, 0.01, 0.0, 0.0, 0.0, 0.0, 1.51]
 params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0),
-               (0.2 / 20.0), 0.005 * (0.2 / 20.0),
+               (0.2 / 20.0), initial_conditions[2] * (0.2 / 20.0),
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0),
                3750.0, 54.75, 105.0, 100.0]
 
@@ -71,7 +71,7 @@ for e0 in e0_range
     new_params[5] = e0 * (0.2 / 20.0)
 
     dilSpecs = (
-        [1, 2, 7], [e0, 0.005, 1.51],    # DISC_A
+        [1, 2, 7], [e0, initial_conditions[2], 1.51],    # DISC_A
         [1, 7],    [e0, 1.51],           # DISC_B
         [1, 7],    [e0, 1.51]            # DISC_C
     )
@@ -110,4 +110,4 @@ GFP_vs_energy_fig = plot(e0_range, total_Gm_values, label="Total GFP Produced",
 
 scatter!([energy_at_max_gfp], [max_total_gfp], label="Max", marker=:star5, color=:red)
 
-savefig("energy_vs_total_gfp.png")
+# savefig("energy_vs_total_gfp.png")
