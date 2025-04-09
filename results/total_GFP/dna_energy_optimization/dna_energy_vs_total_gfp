@@ -50,7 +50,7 @@ function make_discrete_dilute!(dilSpecs)
 end
 
 params = [2.0, 833.0, 4.0, 236.0, 0.0, 0.0, 0.0, 
-          1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0), 
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 
           3750.0, 54.75, 105.0, 100.0]
 
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
@@ -66,8 +66,8 @@ for (i, e0) in enumerate(energy_vals)
         initial_conditions = [e0, D0, 0.0, 0.0, 0.0, 0.0, 1.51]
 
         modified_params = copy(params)
-        modified_params[5] = e0 * (0.2 / 20.0)  # Update energy-dependent parameters
-        modified_params[7] = D0 * (0.2 / 20.0)  # Update DNA-dependent parameters
+        modified_params[5] = e0 * 0.0  # Update energy-dependent parameters
+        modified_params[7] = D0 * 0.0  # Update DNA-dependent parameters
         
         dilSpecs = (
         [1, 2, 7], [e0, D0, 1.51],       # DISC_A

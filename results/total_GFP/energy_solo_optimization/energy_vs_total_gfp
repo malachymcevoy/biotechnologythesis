@@ -51,10 +51,10 @@ function make_discrete_dilute!(dilSpecs)
 end
 
 # === Setup ===
-initial_conditions = [33600.0, 0.01, 0.0, 0.0, 0.0, 0.0, 1.51]
-params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * (0.2 / 20.0),
-               (0.2 / 20.0), initial_conditions[2] * (0.2 / 20.0),
-               1000.0, 1.0, 0.038153465, 0.084, 1.51 * (0.2 / 20.0),
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
+               0.0, initial_conditions[2] * 0.0,
+               1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 
 e0_range = range(0.0, 60000.0, length=1000)
@@ -68,7 +68,7 @@ for e0 in e0_range
     init_cond[1] = e0
 
     new_params = copy(params_base)
-    new_params[5] = e0 * (0.2 / 20.0)
+    new_params[5] = e0 * 0.0
 
     dilSpecs = (
         [1, 2, 7], [e0, initial_conditions[2], 1.51],    # DISC_A
