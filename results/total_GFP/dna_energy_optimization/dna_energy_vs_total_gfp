@@ -56,11 +56,11 @@ params = [2.0, 833.0, 4.0, 236.0, 0.0, 0.0, 0.0,
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 energy_vals = range(1000.0, 60000.0, length=200)  # Energy concentration range
-dna_vals = range(0.001, 0.05, length=200)         # DNA concentration range
+dna_vals = range(0.001, 0.1, length=200)          # DNA concentration range
 
 total_Gm_values = zeros(Float64, length(dna_vals), length(energy_vals))
 
-# Iterate over each combination of DNA concentration (D0) and Energy concentration (e0)
+# === Iterate heatmap points ===
 for (i, e0) in enumerate(energy_vals)
     for (j, D0) in enumerate(dna_vals)
         initial_conditions = [e0, D0, 0.0, 0.0, 0.0, 0.0, 1.51]
@@ -93,6 +93,15 @@ for (i, e0) in enumerate(energy_vals)
     end
 end
 
+# === Find max total GFP ===
+max_idx = argmax(total_Gm_values)
+j_max, i_max = Tuple(CartesianIndices(total_Gm_values)[max_idx])
+opt_dna = dna_vals[j_max]
+opt_energy = energy_vals[i_max]
+opt_gfp = total_Gm_values[j_max, i_max]
+println("Optimal DNA concentration: $(opt_dna) μM")
+println("Optimal Energy concentration: $(opt_energy) μM")
+println("Maximum Total GFP Production: $(round(opt_gfp, digits=2)) μM")
 f = Figure(resolution=(800, 600))
 ax = Axis(f[1, 1], 
     title="Effect of DNA and energy concentration on Total GFP Production",
@@ -102,6 +111,10 @@ ax = Axis(f[1, 1],
 )
 
 hm = heatmap!(ax, dna_vals, energy_vals, total_Gm_values; colormap=:viridis)
+
+scatter!(ax, [opt_dna], [opt_energy], color=:red, markersize=12, marker=:star5)
+text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", position=(opt_dna, opt_energy), align=(:left, :bottom), fontsize=10, color=:red)
+
 Colorbar(f[1, 2], hm, label="Total GFP Output (μM)", labelsize=12, ticklabelsize=10)
 display(f)
 CairoMakie.save("dna_energy_total_gfp_heatmap.png", f)
