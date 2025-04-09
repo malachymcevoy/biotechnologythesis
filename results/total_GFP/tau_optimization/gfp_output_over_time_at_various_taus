@@ -114,4 +114,4 @@ xlabel!("Time (hours)")
 ylabel!("GFP Concentration (μM)")
 title!("GFP Output at Different Dilution Intervals (τ)")
 
-# savefig("Discrete_dilution_across_tau")
+savefig("gfp_output_over_time_at_various_taus")
