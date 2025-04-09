@@ -103,5 +103,5 @@ ax = Axis(f[1, 1],
 
 hm = heatmap!(ax, dna_vals, energy_vals, total_Gm_values; colormap=:viridis)
 Colorbar(f[1, 2], hm, label="Total GFP Output (μM)", labelsize=12, ticklabelsize=10)
-display(hm)
-# CairoMakie.save("dna_energy_total_gfp_heatmap.png", f)
+display(f)
+CairoMakie.save("dna_energy_total_gfp_heatmap.png", f)

@@ -110,4 +110,4 @@ GFP_vs_energy_fig = plot(e0_range, total_Gm_values, label="Total GFP Produced",
 
 scatter!([energy_at_max_gfp], [max_total_gfp], label="Max", marker=:star5, color=:red)
 
-# savefig("energy_vs_total_gfp.png")
+savefig("energy_vs_total_gfp.png")
