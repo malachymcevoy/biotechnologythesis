@@ -26,7 +26,7 @@ function gfp_production_rate(u, p)
 end
 
 function optimize_initial_energy(e0, p)
-    initial_conditions = [e0[1], 0.05, 0.0, 0.0, 0.0, 0.0, 1.51]
+    initial_conditions = [e0[1], 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
     params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                    0.0, initial_conditions[2] * 0.0,
                    1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
