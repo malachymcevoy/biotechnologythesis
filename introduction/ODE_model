@@ -30,7 +30,6 @@ params = [2.0, 833.0, 4.0, 236.0, 33600.0 * (0.2 / 20.0), (0.2 / 20.0), 0.005 * 
 prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params)
 sol = solve(prob, RadauIIA5(), saveat=1.0)
 
-
 # Plot the system of ODEs
 labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
 time_vals = sol.t / 60  # Convert to hours
@@ -42,5 +41,5 @@ xlabel!("Time (hours)")
 ylabel!("μM of molecules")
 title!("ODE Model")
 
-gr(fmt=:png, dpi=300)
-savefig("cellfree_ODE_fig.png")
+# gr(fmt=:png, dpi=300)
+# savefig("cellfree_ODE_fig.png")

@@ -25,74 +25,61 @@ function gfp_production_rate(u, p)
     return cl * (ktl / nG) * (e / (Ktl + e))
 end
 
-initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
-params = [2.0, 833.0, 4.0, 236.0, 33600.0 * 0.0, 0.0, 0.005 * 0.0,
-          1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
+function make_discrete_dilute!(dilSpecs)
+return function (integrator)
+    p = integrator.p
+    f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
+    INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C = dilSpecs
 
-#region < Discrete Dilution Callback >
-function discreteDilute!(integrator)
-    f_V, tau, s1, s2, tmax, tsave, nspecies, dilSpecs = integrator.p[end-7:end]
-    INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C, INDEX_CONT, CONC_CONT_A, CONC_CONT_B = dilSpecs
+    for j in 1:Int(nspecies)
+        integrator.u[j] *= (1.0 - f_V)
+    end
 
-    if integrator.t < s1 * 60  # Stage 1
-        for j in 1:nspecies
-            integrator.u[j] *= (1 - f_V)  # Dilution by factor (1 - f_V)
-        end
+    if integrator.t < s1 * 60
         for j in 1:length(INDEX_DISC_A)
-            integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]  # Add fresh material back in
+            integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
         end
-    elseif s1 * 60 <= integrator.t < s2 * 60  # Stage 2
-        for j in 1:nspecies
-            integrator.u[j] *= (1 - f_V)
-        end
+    elseif integrator.t >= s1 * 60 && integrator.t < s2 * 60
         for j in 1:length(INDEX_DISC_B)
             integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
         end
-    elseif s2 * 60 <= integrator.t  # Stage 3
-        for j in 1:nspecies
-            integrator.u[j] *= (1 - f_V)
-        end
+    else
         for j in 1:length(INDEX_DISC_C)
             integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
         end
     end
 end
+end
 
-# Define the indices and concentrations for dilution stages
-u0 = initial_conditions
-idx_e, idx_D_G, idx_m_G, idx_cl_G, idx_G, idx_G_m, idx_R = 1, 2, 3, 4, 5, 6, 7
-
-INDEX_DISC_A = [idx_e, idx_D_G, idx_R]
-CONC_DISC_A = [u0[1], u0[2], u0[7]]
-INDEX_DISC_B = [idx_e, idx_R]
-CONC_DISC_B = [u0[1], u0[7]]
-INDEX_DISC_C = [idx_e, idx_R]
-CONC_DISC_C = [u0[1], u0[7]]
-INDEX_CONT = [14, 15, 16]
-CONC_CONT_A = [33600.0, 0.0, 1.51]
-CONC_CONT_B = [33600.0, 0.0, 1.51]
-dilSpecs = (INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C, INDEX_CONT, CONC_CONT_A, CONC_CONT_B)
-
-# Dilution fraction and other fixed parameters
+# === Setup ===
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
+               0.0, initial_conditions[2] * 0.0,
+               1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
+               3750.0, 54.75, 105.0, 100.0]
 f_V = 0.2
 s1, s2, tmax, tsave, nspecies = 9.0, 0.0, 20.0, 100.0, 7
+tau_values = [5, 10, 20, 40, 80]
 
-# Tau values to be plotted
-tau_values = [5, 10, 20, 80, 140]
 
-# Create the plot for GFP (G output) at different tau values
+# === Plot GFP at various taus ===
 GFP_plot = plot()
 for tau in tau_values
-    params_with_dilution = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies, dilSpecs])
+    dilSpecs = (
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],       # DISC_A
+        [1, 7],    [initial_conditions[1], 1.51],                              # DISC_B
+        [1, 7],    [initial_conditions[1], 1.51]                               # DISC_C
+    )
 
-    periodcb = PeriodicCallback(discreteDilute!, tau; save_positions=(false,false))
-    cb = CallbackSet(periodcb) #, savecb)
-    
-    # Solve the ODE with the discrete dilution callback
-    prob = ODEProblem(model!, initial_conditions, (0.0, 5000.0), params_with_dilution)
-    sol = solve(prob, Tsit5(), callback=periodcb, saveat=1.0)
+    # Do not include dilSpecs in the parameter vector
+    params_with_dilution = vcat(params_base, [f_V, tau, s1, s2, tmax, 0.0, nspecies])
 
-    time_vals = sol.t / 60  # Convert time from seconds to minutes
+    cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
+
+    prob = ODEProblem(model!, initial_conditions, (0.0, 2000.0), params_with_dilution)
+    sol = solve(prob, RadauIIA5(), callback=cb, saveat=1.0)
+
+    time_vals = sol.t ./ 60
     plot!(GFP_plot, time_vals, sol[6, :], label="τ = $tau", lw=2)
 
     function compute_total_gfp(sol, params)
@@ -105,13 +92,13 @@ for tau in tau_values
         return total_gfp_production
     end
 
-    total_gfp = compute_total_gfp(sol, params_flat)
-    println("Total GFP produced at tau =", tau, "min: ", total_gfp)
+    total_gfp = compute_total_gfp(sol, params_with_dilution)
+    println("Total GFP produced at tau = $tau min: ", total_gfp)
 end
 
-# Customize the plot
 xlabel!("Time (hours)")
 ylabel!("GFP Concentration (μM)")
 title!("GFP Output at Different Dilution Intervals (τ)")
+savefig("gfp_output_over_time_at_various_taus.png")
 
 savefig("gfp_output_over_time_at_various_taus")

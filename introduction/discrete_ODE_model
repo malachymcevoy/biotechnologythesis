@@ -1,6 +1,6 @@
 using DifferentialEquations, DiffEqCallbacks, Plots
 
-#region < ODE Model >
+
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
     e, D, m, cl, G, Gm, R = u
@@ -17,78 +17,52 @@ function model!(du, u, p, t)
     du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
 end
 
-initial_conditions = [53333.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0, 0.0, initial_conditions[2] * 0.0,
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
-#endregion
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
-#region < Discrete Dilution Callback >
-function discreteDilute!(integrator)
-    f_V, tau, s1, s2, tmax, tsave, nspecies, dilSpecs = integrator.p[end-7:end]
-    INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C, INDEX_CONT, CONC_CONT_A, CONC_CONT_B = dilSpecs
+dilSpecs = (
+            [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],    # DISC_A
+            [1, 7],    [initial_conditions[1], 1.51],                           # DISC_B
+            )
 
-    if integrator.t < s1 * 60
-        for j in 1:nspecies
-            integrator.u[j] *= (1 - f_V)  # Dilution by factor (1 - f_V)
+params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
+
+function make_discrete_dilute!(dilSpecs)
+    return function (integrator)
+        p = integrator.p
+        f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
+
+        for j in 1:Int(nspecies)
+            integrator.u[j] *= (1.0 - f_V)
         end
-        for j in 1:length(INDEX_DISC_A)
-            integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
-        end
-    elseif s1 * 60 <= integrator.t < s2 * 60
-        for j in 1:nspecies
-            integrator.u[j] *= (1 - f_V)
-        end
-        for j in 1:length(INDEX_DISC_B)
-            integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
-        end
-    elseif s2 * 60 <= integrator.t
-        for j in 1:nspecies
-            integrator.u[j] *= (1 - f_V)
-        end
-        for j in 1:length(INDEX_DISC_C)
-            integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+
+        if integrator.t < s1 * 60
+            for j in 1:length(dilSpecs[1])
+                integrator.u[dilSpecs[1][j]] += f_V * dilSpecs[2][j]
+            end
+        else integrator.t >= s1 * 60 && integrator.t < s2 * 60
+            for j in 1:length(dilSpecs[3])
+                integrator.u[dilSpecs[3][j]] += f_V * dilSpecs[4][j]
+            end
         end
     end
 end
 
-u0 = initial_conditions
-idx_e, idx_D_G, idx_m_G, idx_cl_G, idx_G, idx_G_m, idx_R = 1, 2, 3, 4, 5, 6, 7
+cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
-INDEX_DISC_A = [idx_e, idx_D_G, idx_R]
-CONC_DISC_A = [u0[1], u0[2], u0[7]]
-INDEX_DISC_B = [idx_e, idx_R]
-CONC_DISC_B = [u0[1], u0[7]]
-INDEX_DISC_C = [idx_e, idx_R]
-CONC_DISC_C = [u0[1], u0[7]]
-INDEX_CONT = [14, 15, 16]
-CONC_CONT_A = [initial_conditions[1], 0.0, 1.51]
-CONC_CONT_B = [initial_conditions[1], 0.0, 1.51]
-dilSpecs = (INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C, INDEX_CONT, CONC_CONT_A, CONC_CONT_B)
+prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_flat)
+sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
 
-f_V = 0.2
-tau, s1, s2, tmax, tsave, nspecies = 20, 9.0, 0.0, 20.0, 100.0, 7
-params_with_dilution = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies, dilSpecs])
-#endregion
-
-#region < ODE Solution with Callback >
-# Create a DiscreteCallback using the dilution function
-periodcb = PeriodicCallback(discreteDilute!, tau; save_positions=(false,false))
-cb = CallbackSet(periodcb) #, savecb)
-
-# Solve the ODE with the discrete dilution callback
-prob = ODEProblem(model!, initial_conditions, (0.0, 2000.0), params_with_dilution)
-sol = solve(prob, Tsit5(), callback=periodcb, saveat=1.0)
-
-# Plotting the results
 labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
-time_vals = sol.t / 60  # Convert time from seconds to minutes for plotting
+time_vals = sol.t / 60
 
 ODEfig = plot()
 for i in 2:7
     plot!(ODEfig, time_vals, sol[i, :], label=labels[i])
 end
-xlabel!("Time (minutes)")
+xlabel!("Time (hours)")
 ylabel!("μM of molecules")
 title!("ODE Model with Discrete Dilution")
 display("image/png", ODEfig)
-#endregion

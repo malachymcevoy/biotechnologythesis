@@ -27,23 +27,18 @@ function make_discrete_dilute!(dilSpecs)
     return function (integrator)
         p = integrator.p
         f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
-        INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C = dilSpecs
 
         for j in 1:Int(nspecies)
             integrator.u[j] *= (1.0 - f_V)
         end
 
         if integrator.t < s1 * 60
-            for j in 1:length(INDEX_DISC_A)
-                integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
+            for j in 1:length(dilSpecs[1])
+                integrator.u[dilSpecs[1][j]] += f_V * dilSpecs[2][j]
             end
-        elseif integrator.t >= s1 * 60 && integrator.t < s2 * 60
-            for j in 1:length(INDEX_DISC_B)
-                integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
-            end
-        else
-            for j in 1:length(INDEX_DISC_C)
-                integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+        else integrator.t >= s1 * 60 && integrator.t < s2 * 60
+            for j in 1:length(dilSpecs[3])
+                integrator.u[dilSpecs[3][j]] += f_V * dilSpecs[4][j]
             end
         end
     end
@@ -56,7 +51,7 @@ params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 
-tau_range = 5.0:1.0:100.0
+tau_range = 1.0:1.0:100.0
 total_Gm_values = Float64[]
 
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
