@@ -50,7 +50,7 @@ function make_discrete_dilute!(dilSpecs)
 end
 
 # === Setup ===
-initial_conditions = [60000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
  params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                0.0, initial_conditions[2] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
@@ -107,4 +107,4 @@ dna_vs_energy_fig = plot(dna_vals, total_Gm_values, label="Total GFP Produced",
 
 scatter!([DNA_at_max_gfp], [max_total_gfp], label="Max", marker=:star5, color=:red)
 
-savefig("dna_vs_total_gfp.png")
+# savefig("dna_vs_total_gfp.png")
