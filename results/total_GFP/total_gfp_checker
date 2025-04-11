@@ -1,4 +1,4 @@
-using DataFrames, DifferentialEquations, Plots, DiffEqCallbacks
+using DataFrames, DifferentialEquations, DiffEqCallbacks
 
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p[1:16]
@@ -25,7 +25,7 @@ function gfp_production_rate(u, p)
 end
 
 # === Setup ===
-initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [60000.0, 0.025376884422110554, 0.0, 0.0, 0.0, 0.0, 1.51]
 params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                0.0, initial_conditions[2] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
