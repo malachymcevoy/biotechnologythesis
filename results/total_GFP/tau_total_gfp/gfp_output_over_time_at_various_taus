@@ -25,6 +25,19 @@ function gfp_production_rate(u, p)
     return cl * (ktl / nG) * (e / (Ktl + e))
 end
 
+function energy_consumption_rate(u, p)
+    qx, ng, ql, nG, _, _, _, _, _, _, _, _, ktx, Ktx, ktl, Ktl = p[1:16]
+    e, D, m, cl, G, Gm, R = u
+    
+    vtx = D * (ktx / ng) * (e / (Ktx + e))  # Transcription rate
+    vtl = cl * (ktl / nG) * (e / (Ktl + e)) # Translation rate
+    
+    E_tx_rate = vtx * qx * ng  # Energy consumed by transcription
+    E_tl_rate = vtl * ql * nG  # Energy consumed by translation
+    
+    return E_tx_rate + E_tl_rate
+end
+
 function make_discrete_dilute!(dilSpecs)
 return function (integrator)
     p = integrator.p
@@ -61,17 +74,22 @@ f_V = 0.2
 s1, s2, tmax, tsave, nspecies = 9.0, 0.0, 20.0, 100.0, 7
 tau_values = [5, 10, 20, 40, 80]
 
-
 # === Plot GFP at various taus ===
 GFP_plot = plot()
 for tau in tau_values
+    dilution_times = [n * tau for n in 1:floor(Int, 1000.0 / tau) if n * tau <= 1000.0] # Number of dilutions
+    pre_washout_dilutions = filter(t -> t < s1 * 60, dilution_times) # Number of dilutions before the washout phase begins
+
+    num_dilutions = length(dilution_times)
+    energy_per_dilution = f_V * initial_conditions[1]
+    total_energy_supplied = num_dilutions * energy_per_dilution
+
     dilSpecs = (
         [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],       # DISC_A
         [1, 7],    [initial_conditions[1], 1.51],                              # DISC_B
         [1, 7],    [initial_conditions[1], 1.51]                               # DISC_C
     )
 
-    # Do not include dilSpecs in the parameter vector
     params_with_dilution = vcat(params_base, [f_V, tau, s1, s2, tmax, 0.0, nspecies])
 
     cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
@@ -91,9 +109,33 @@ for tau in tau_values
         end
         return total_gfp_production
     end
+    
+    function compute_total_energy_consumed(sol, params)
+        total_energy_consumed = 0.0
+        for i in 2:length(sol.t)
+            dt = sol.t[i] - sol.t[i-1]
+            
+            e = sol.u[i][1]
+            D = sol.u[i][2]
+            cl = sol.u[i][4]
+            
+            rate = energy_consumption_rate([e, D, 0.0, cl, 0.0, 0.0, 0.0], params)
+            total_energy_consumed += rate * dt
+        end
+        return total_energy_consumed
+    end
 
     total_gfp = compute_total_gfp(sol, params_with_dilution)
-    println("Total GFP produced at tau = $tau min: ", total_gfp)
+    total_energy_consumed = compute_total_energy_consumed(sol, params_with_dilution)
+
+    println("======== For τ = $tau: ========")
+    println("Total GFP produced at tau = $tau min: ", total_gfp, "µM.")
+    println("")
+    println("Number of dilutions before washout phase (τ = $tau): ", length(pre_washout_dilutions), ".")
+    println("Total energy supplied to the system: ", total_energy_supplied, "µM.")
+    println("Total energy consumed by the system :", total_energy_consumed, "µM")
+    println("")
+    println("")
 end
 
 xlabel!("Time (hours)")
