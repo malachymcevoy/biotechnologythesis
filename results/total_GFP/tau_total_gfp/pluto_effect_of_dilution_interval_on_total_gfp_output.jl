@@ -41,7 +41,6 @@ begin
         du[5] = vtl - km * G - mu * G
         du[6] = km * G - mu * Gm
         du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
-		du[8] = vtx * qx * ng + vtl * ql * nG  # energy usage rate
     end
 
     function make_discrete_dilute!(dilSpecs)
@@ -82,7 +81,7 @@ params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
 md"Tau slider:"
 
 # ╔═╡ 05ccfbd1-f35e-4240-ba2d-db38f16a902c
-@bind tau Slider(1.0:1.0:100.0, default=20.0, show_value=true)
+@bind tau Slider(1.0:1.0:120.0, default=20.0, show_value=true)
 
 # ╔═╡ c9e17553-7db0-419e-9ae9-df67ca41228d
 md"Run the ODE model and plot GFP over time"
@@ -112,44 +111,12 @@ begin
 		 title="GFP Accumulation over Time (τ = $(tau) min)", lw=2, legend=false)
 end
 
-# ╔═╡ 66e55cd5-32f3-4e00-82dd-6fae1ff9bba4
+# ╔═╡ 9d9e3ada-c61a-4c27-8ef9-ecbd40c5c934
 begin
-	    dilution_times = [n * tau for n in 1:floor(Int, 1000.0 / tau) if n * tau <= 1000.0]
-	    pre_washout_dilutions = filter(t -> t < s1 * 60, dilution_times)
-	
-	    println("Number of dilutions before washout phase: ", length(pre_washout_dilutions))
-end
+    dilution_times = [n * tau for n in 1:floor(Int, 1000.0 / tau) if n * tau <= 1000.0]
+    pre_washout_dilutions = filter(t -> t < s1 * 60, dilution_times)
 
-# ╔═╡ cdc28544-d7c7-43ba-8830-8af8069d6360
-begin
-	number_of_dilutions = floor(Int, (s1 * 60) / tau)
-	total_energy_supplied = initial_conditions[1] * f_V * number_of_dilutions
-	println("Total energy supplied to the system: ", total_energy_supplied, "µM")
-end
-
-# ╔═╡ e2d296a9-c0b7-4036-a38d-f04ade9cbfe9
-md"## Number of dilutions vs tau"
-
-# ╔═╡ 81958eba-06d3-4af5-bc92-b0211c926add
-begin
-    tau_values = 1.0:1.0:100.0
-    dilution_counts = [count(t -> t < s1 * 60, [n * tau for n in 1:floor(Int, 1000.0 / tau)]) for tau in tau_values]
-
-    # Detect where the number of dilutions changes (jump points)
-    jump_points = []
-    for i in 2:length(dilution_counts)
-        if dilution_counts[i] != dilution_counts[i-1]
-            push!(jump_points, tau_values[i])
-        end
-    end
-
-    println("Jump points (τ values where dilution count changes): ", jump_points)
-end
-
-# ╔═╡ f9873066-48ed-4ced-adc9-eaa9017129e5
-begin
-    plot(tau_values, dilution_counts, xlabel="Tau (minutes)", ylabel="Dilutions Before Washout",
-         title="Impact of Tau on Dilution Count Before 9 Hours", lw=2, legend=false)
+    println("Number of dilutions before washout phase: ", length(pre_washout_dilutions))
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -2811,10 +2778,6 @@ version = "1.4.1+2"
 # ╟─05ccfbd1-f35e-4240-ba2d-db38f16a902c
 # ╟─c9e17553-7db0-419e-9ae9-df67ca41228d
 # ╟─50758284-3014-4f8d-91d9-2d75711caaf7
-# ╟─66e55cd5-32f3-4e00-82dd-6fae1ff9bba4
-# ╟─cdc28544-d7c7-43ba-8830-8af8069d6360
-# ╟─e2d296a9-c0b7-4036-a38d-f04ade9cbfe9
-# ╟─f9873066-48ed-4ced-adc9-eaa9017129e5
-# ╟─81958eba-06d3-4af5-bc92-b0211c926add
+# ╟─9d9e3ada-c61a-4c27-8ef9-ecbd40c5c934
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
