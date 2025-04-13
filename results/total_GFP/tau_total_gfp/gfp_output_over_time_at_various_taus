@@ -72,7 +72,7 @@ params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 f_V = 0.2
 s1, s2, tmax, tsave, nspecies = 9.0, 0.0, 20.0, 100.0, 7
-tau_values = [5, 10, 20, 40, 80]
+tau_values = [10, 20, 30, 40, 80]
 
 # === Plot GFP at various taus ===
 GFP_plot = plot()
@@ -82,7 +82,7 @@ for tau in tau_values
 
     num_dilutions = length(dilution_times)
     energy_per_dilution = f_V * initial_conditions[1]
-    total_energy_supplied = num_dilutions * energy_per_dilution
+    total_energy_supplied = initial_conditions[1] + num_dilutions * energy_per_dilution
 
     dilSpecs = (
         [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],       # DISC_A
@@ -133,7 +133,7 @@ for tau in tau_values
     println("")
     println("Number of dilutions before washout phase (τ = $tau): ", length(pre_washout_dilutions), ".")
     println("Total energy supplied to the system: ", total_energy_supplied, "µM.")
-    println("Total energy consumed by the system :", total_energy_consumed, "µM")
+    println("Total energy consumed by the system: ", total_energy_consumed, "µM")
     println("")
     println("")
 end
@@ -142,5 +142,3 @@ xlabel!("Time (hours)")
 ylabel!("GFP Concentration (μM)")
 title!("GFP Output at Different Dilution Intervals (τ)")
 savefig("gfp_output_over_time_at_various_taus.png")
-
-savefig("gfp_output_over_time_at_various_taus")
