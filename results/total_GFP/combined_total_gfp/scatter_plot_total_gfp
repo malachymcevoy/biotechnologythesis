@@ -1,7 +1,4 @@
-using DifferentialEquations
-using LinearAlgebra
-using Plots
-using ProgressMeter
+using DifferentialEquations, LinearAlgebra, Plots, ProgressMeter
 
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
