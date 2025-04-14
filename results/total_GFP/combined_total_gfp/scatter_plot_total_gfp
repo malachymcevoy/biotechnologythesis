@@ -83,9 +83,9 @@ function run_simulation(dna_conc, energy_conc, tau)
 end
 
 function create_3d_scatter_plot()
-    dna_vals = range(0.001, 0.1, length=20)
-    energy_vals = range(30000, 60000, length=20)
-    tau_vals = range(1, 180, length=20)
+    dna_vals = range(0.001, 0.1, length=30)
+    energy_vals = range(30000, 60000, length=30)
+    tau_vals = range(1, 180, length=30)
 
     raw_points = []
     gfp_vals = Float64[]
@@ -107,29 +107,38 @@ function create_3d_scatter_plot()
         max_idx = argmax(gfp_vals)
         max_point = raw_points[max_idx]
         println("Max GFP: $(round(gfp_vals[max_idx], digits=4))")
-        println("DNA Concentration: $(round(max_point[1], digits=4)) µM")
+        println("DNA Concentration: $(round(max_point[1], digits=4)) µM          ")
         println("Energy Concentration: $(round(max_point[2], digits=4)) µM")
         println("Dilution Interval τ: $(round(max_point[3], digits=4)) min")
     end
-
+   
+    # Sort points by GFP value
+    sorted = sortperm(gfp_vals)
+    sorted_points = raw_points[sorted]
+    sorted_gfp = gfp_vals[sorted]
+    
     fig = scatter(
-        [p[1] for p in raw_points], 
-        [p[2] for p in raw_points], 
-        [p[3] for p in raw_points],
-        zcolor=gfp_vals,
-        xlabel="DNA Concentration (µM)", 
+        [p[1] for p in sorted_points], 
+        [p[2] for p in sorted_points], 
+        [p[3] for p in sorted_points],
+        zcolor=sorted_gfp,
+        xlabel="DNA Concentration (µM)          ", 
         ylabel="                                    Energy Concentration (µM)", 
-        # Add spaces to move label right
         zlabel="Dilution Interval τ (min)",
         title="Total GFP Production",
         markersize=5,
         markerstrokecolor=:auto,
-        markerstrokewidth=0.2,
+        markerstrokewidth=0.1,
         c=:viridis,
         size=(1200, 900),
         label=false
     )
-
+    scatter!(
+    [max_point[1]], [max_point[2]], [max_point[3]],
+    markersize=5,
+    markercolor=:red,
+    label="Maximum GFP"
+    )
     savefig(fig, "gfp_3d_scatter_plot.png")
     display(fig)
 end
