@@ -1,33 +1,26 @@
 using Optim, ForwardDiff
 
-# Define the Rosenbrock function
 rosenbrock(u) = (1.0 - u[1])^2 + 100.0 * (u[2] - u[1]^2)^2
+x0 = [1.2, 1.2] # Initial guess
 
-# Initial guess for the optimization
-x0 = [1.2, 1.2]
-
-# Perform BFGS Optimization with history tracking
 bfgs_result = optimize(rosenbrock, x0, BFGS(), Optim.Options(store_trace = true))
 bfgs_history = bfgs_result.trace
 
-# Perform Steepest Descent Optimization with history tracking
 steepest_result = optimize(rosenbrock, x0, GradientDescent(), Optim.Options(store_trace = true))
 steepest_history = steepest_result.trace
 
-# Perform Newton's Method Optimization with history tracking
 newton_result = optimize(rosenbrock, x0, Newton(), Optim.Options(store_trace = true))
 newton_history = newton_result.trace
 
-# Displaying the first five iterations for each method
 println("\n--- First 5 Iterations ---")
 
 println("\nBFGS First 5 Iterations:")
-for x in bfgs_history[7:11]  # Selecting the first 5 iterations
+for x in bfgs_history[7:11]
     println(x)
 end
 
 println("\nSteepest Descent First 5 Iterations:")
-for x in steepest_history[995:1000]  # Selecting the first 5 iterations
+for x in steepest_history[995:1000]
     println(x)
 end
 
