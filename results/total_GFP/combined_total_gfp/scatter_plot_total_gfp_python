@@ -98,9 +98,9 @@ def run_simulation(dna_conc, energy_conc, tau):
 
 
 def create_3d_scatter_plot():
-    dna_vals = np.linspace(0.001, 0.1, 10)
-    energy_vals = np.linspace(30000, 60000, 10)
-    tau_vals = np.linspace(1, 180, 10)
+    dna_vals = np.linspace(0.001, 0.1, 25)
+    energy_vals = np.linspace(30000, 60000, 25)
+    tau_vals = np.linspace(1, 180, 25)
 
     raw_points = []
     gfp_vals = []
@@ -151,7 +151,7 @@ def create_3d_scatter_plot():
     ax.legend()
     plt.title('Total GFP Production')
     plt.tight_layout()
-    plt.savefig("gfp_3d_scatter_plot.png")
+    plt.savefig("total_gfp_combined_scatter_plot.png")
     plt.show()
 
 
