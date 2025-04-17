@@ -96,9 +96,9 @@ end
 # === Analyze Results ===
 max_total_gfp = maximum(total_Gm_values)
 max_index = argmax(total_Gm_values)
-energy_at_max_gfp = e0_range[max_index]
+energy_at_max_total_gfp = e0_range[max_index]
 
-println("Energy value for maximum total GFP production: $(energy_at_max_gfp) µM")
+println("Energy value for maximum total GFP production: $(energy_at_max_total_gfp) µM")
 println("Maximum total GFP produced: $(max_total_gfp) μM")
 
 # === Plot ===
@@ -108,6 +108,6 @@ GFP_vs_energy_fig = plot(e0_range, total_Gm_values, label="Total GFP Produced",
                          title="Total GFP Production vs Initial Energy",
                          linewidth=2, legend=false)
 
-scatter!([energy_at_max_gfp], [max_total_gfp], label="Max", marker=:star5, color=:red)
+scatter!([energy_at_max_total_gfp], [max_total_gfp], label="Max", marker=:star5, color=:red)
 
 # savefig("energy_vs_total_gfp.png")
