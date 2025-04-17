@@ -1,4 +1,4 @@
-using DataFrames, DifferentialEquations, Plots, Optimization, OptimizationOptimJL, OptimizationBBO, Zygote
+using DataFrames, DifferentialEquations, Plots
 
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p[1:16]
@@ -49,46 +49,42 @@ params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
-
-e0_range = range(0.0, 60000.0, length=1000)
+dna_vals = range(0.001, 0.1, length=10000)
 peak_Gm_values = Float64[]
 
-for e0 in e0_range
-    init_cond = copy(initial_conditions)
-    init_cond[1] = e0  # Set new initial energy concentration
-    
-    new_params = copy(params)
-    new_params[5] = e0 * 0.0  # Update parameters with new ein value
+for (i, D0) in enumerate(dna_vals)
+    modified_initial_conditions = copy(initial_conditions)
+    modified_initial_conditions[2] = D0
 
+    modified_parameters = copy(params)
+    modified_parameters[7] = D0 * 0.0
+    
     dilSpecs = (
-        [1, 2, 7], [e0, initial_conditions[2], 1.51],    # DISC_A
-        [1, 7],    [e0, 1.51],           # DISC_B
-        [1, 7],    [e0, 1.51]            # DISC_C
+        [1, 2, 7], [initial_conditions[1], D0, 1.51],       # DISC_A
+        [1, 7],    [initial_conditions[1], 1.51],           # DISC_B
+        [1, 7],    [initial_conditions[1], 1.51]            # DISC_C
     )
 
-    params_flat = vcat(new_params, [f_V, tau, s1, s2, tmax, tsave, nspecies])
+    params_flat = vcat(modified_parameters, [f_V, tau, s1, s2, tmax, tsave, nspecies])
     cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
-    prob = ODEProblem(model!, init_cond, (0.0, 1000.0), params_flat)
+    prob = ODEProblem(model!, modified_initial_conditions, (0.0, 1000.0), params_flat)
     sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
 
-    push!(peak_Gm_values, maximum(sol[6, :])) # Extract and store the max GFP value
+    push!(peak_Gm_values, maximum(sol[6, :]))
 end
 
 # === Analyze and plot results ===
 max_peak_gfp = maximum(peak_Gm_values)
 max_index = argmax(peak_Gm_values)
-energy_at_max_peak_gfp = e0_range[max_index]
+dna_at_max_peak_gfp = dna_vals[max_index]
 
-println("Energy value for maximum peak GFP production : $energy_at_max_peak_gfp µM")
+println("DNA concentration for maximum peak GFP production : $dna_at_max_peak_gfp µM")
 println("Maximum peak GFP produced : $max_peak_gfp µM")
 
-GFP_vs_energy_fig = plot(e0_range, peak_Gm_values, label="Max GFP Produced",
-                         xlabel="Initial Energy Concentration (μM)",
-                         ylabel="Max GFP (μM)",
-                         title="GFP Production vs Initial Energy",
-                         linewidth=2, legend=:bottomright)
+# Plot GFP vs. DNA concentration (D0) for fixed energy concentration (e0)
+plot(dna_vals, peak_Gm_values, xlabel="DNA Concentration (μM)", ylabel="Peak GFP Output",
+     title="Effect of DNA Concentration on Peak GFP", label="Peak GFP", linewidth=2)
+scatter!([dna_at_max_peak_gfp], [max_peak_gfp], label="Max", marker=:star5, color=:red)
 
-scatter!([energy_at_max_peak_gfp], [max_peak_gfp], label="Max", marker=:star5, color=:red)
-
-savefig("energy_vs_peak_gfp.png")
+savefig("dna_vs_peak_gfp")
