@@ -74,72 +74,92 @@ f_V = 0.2
 s1, s2, tmax, tsave, nspecies = 9.0, 0.0, 20.0, 100.0, 7
 tau_values = [10, 20, 30, 40, 80]
 
-# === Plot GFP at various taus ===
+using Plots
+gr(fmt=:png, dpi=300)
+
+# Smooth tau sweep
+tau_values_continuous = range(5.0, 120.0, length=150)
+
+tau_list = Float64[]
+total_gfp_list = Float64[]
+total_energy_supplied_list = Float64[]
+total_energy_consumed_list = Float64[]
+pre_washout_dilution_list = Int[]
+
 GFP_plot = plot()
-for tau in tau_values
-    dilution_times = [n * tau for n in 1:floor(Int, 2000.0 / tau) if n * tau <= 2000.0] # Number of dilutions
-    pre_washout_dilutions = filter(t -> t < s1 * 60, dilution_times) # Number of dilutions before the washout phase begins
+
+for tau in tau_values_continuous
+    dilution_times = [n * tau for n in 1:floor(Int, 2000.0 / tau) if n * tau <= 2000.0]
+    pre_washout_dilutions = filter(t -> t < s1 * 60, dilution_times)
 
     num_dilutions = length(dilution_times)
     energy_per_dilution = f_V * initial_conditions[1]
     total_energy_supplied = initial_conditions[1] + num_dilutions * energy_per_dilution
 
     dilSpecs = (
-        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],       # DISC_A
-        [1, 7],    [initial_conditions[1], 1.51],                              # DISC_B
-        [1, 7],    [initial_conditions[1], 1.51]                               # DISC_C
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+        [1, 7],    [initial_conditions[1], 1.51],
+        [1, 7],    [initial_conditions[1], 1.51]
     )
 
     params_with_dilution = vcat(params_base, [f_V, tau, s1, s2, tmax, 0.0, nspecies])
-
     cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
     prob = ODEProblem(model!, initial_conditions, (0.0, 2000.0), params_with_dilution)
     sol = solve(prob, RadauIIA5(), callback=cb, saveat=1.0)
 
-    time_vals = sol.t ./ 60
-    plot!(GFP_plot, time_vals, sol[6, :], label="τ = $tau", lw=2)
-
     function compute_total_gfp(sol, params)
-        total_gfp_production = 0.0
+        total = 0.0
         for i in 2:length(sol.t)
             dt = sol.t[i] - sol.t[i-1]
             rate = gfp_production_rate(sol.u[i-1], params)
-            total_gfp_production += rate * dt
+            total += rate * dt
         end
-        return total_gfp_production
+        return total
     end
-    
+
     function compute_total_energy_consumed(sol, params)
-        total_energy_consumed = 0.0
+        total = 0.0
         for i in 2:length(sol.t)
             dt = sol.t[i] - sol.t[i-1]
-            
-            e = sol.u[i][1]
-            D = sol.u[i][2]
-            cl = sol.u[i][4]
-            
+            e = sol.u[i][1]; D = sol.u[i][2]; cl = sol.u[i][4]
             rate = energy_consumption_rate([e, D, 0.0, cl, 0.0, 0.0, 0.0], params)
-            total_energy_consumed += rate * dt
+            total += rate * dt
         end
-        return total_energy_consumed
+        return total
     end
 
     total_gfp = compute_total_gfp(sol, params_with_dilution)
     total_energy_consumed = compute_total_energy_consumed(sol, params_with_dilution)
 
-    println("======== For τ = $tau: ========")
-    println("Total GFP produced at tau = $tau min: ", total_gfp, "µM.")
-    println("")
-    println("Number of dilutions before washout phase (τ = $tau): ", length(pre_washout_dilutions), ".")
-    println("Number of total dilutions (τ = $tau): ", num_dilutions, ".")
-    println("Total energy supplied to the system: ", total_energy_supplied, "µM.")
-    println("Total energy consumed by the system: ", total_energy_consumed, "µM")
-    println("")
-    println("")
+    # Store
+    push!(tau_list, tau)
+    push!(total_gfp_list, total_gfp)
+    push!(total_energy_consumed_list, total_energy_consumed)
+    push!(total_energy_supplied_list, total_energy_supplied)
+    push!(pre_washout_dilution_list, length(pre_washout_dilutions))
 end
 
-xlabel!("Time (hours)")
-ylabel!("GFP Concentration (μM)")
-title!("GFP Output at Different Dilution Intervals (τ)")
-# savefig("gfp_output_over_time_at_various_taus.png")
+p2 = plot(tau_list, total_gfp_list, lw=2, label="Total GFP")
+xlabel!(p2, "τ (min)")
+ylabel!(p2, "Total GFP Produced (μM)")
+title!(p2, "B: Total GFP vs τ")
+
+p3 = plot(tau_list, total_energy_consumed_list, lw=2, label="Total Energy Consumed")
+xlabel!(p3, "τ (min)")
+ylabel!(p3, "Total Energy Consumed (μM)")
+title!(p3, "C: Energy Consumed vs τ")
+
+p4 = plot(tau_list, total_energy_supplied_list, lw=2, label="Total Energy Supplied")
+xlabel!(p4, "τ (min)")
+ylabel!(p4, "Total Energy Supplied (μM)")
+title!(p4, "D: Energy Supplied vs τ")
+
+p5 = plot(tau_list, pre_washout_dilution_list, lw=2, label="Pre-washout Dilutions")
+xlabel!(p5, "τ (min)")
+ylabel!(p5, "Dilution Count")
+title!(p5, "E: Pre-washout Dilutions vs τ")
+
+# === Assemble the final figure ===
+final_plot = plot(p2, p3, p4, p5; layout=(2,2), size=(1000,800))
+# savefig(final_plot, "tau_vs_gfp_energy_dilutions.png")
