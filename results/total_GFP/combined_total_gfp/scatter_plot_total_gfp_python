@@ -1,0 +1,159 @@
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from tqdm import tqdm
+
+
+# === Define ODE model ===
+def model(t, u, p):
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du = np.zeros(7)
+    du[0] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[1] = Din - mu * D
+    du[2] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[3] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[4] = vtl - km * G - mu * G
+    du[5] = km * G - mu * Gm
+    du[6] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+
+    return du
+
+# === Function to calculate GFP production rate ===
+def gfp_production_rate(u, p):
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+    return vtl
+
+
+# === Function that applies the dilution ===
+def apply_dilution(u, indices, concentrations, f_V):
+    u = np.array(u) * (1.0 - f_V)
+    for idx, conc in zip(indices, concentrations):
+        u[idx] += f_V * conc
+    return u
+
+
+def run_simulation(dna_conc, energy_conc, tau):
+    initial_conditions = [energy_conc, dna_conc, 0.0, 0.0, 0.0, 0.0, 1.51]
+    params = [2.0, 833.0, 4.0, 236.0, 0.0, 0.0, 0.0,
+              1000.0, 1.0, 0.038153465, 0.084, 0.0, 3750.0, 54.75, 105.0, 100.0]
+
+    f_V = 0.2
+    s1, s2 = 9.0, 0.0
+    tmax = 20.0 * 60.0  # seconds
+    nspecies = 7
+
+    INDEX_DISC_A = [0, 1, 6]
+    CONC_DISC_A = [energy_conc, dna_conc, 1.51]
+    INDEX_DISC_B = [0, 6]
+    CONC_DISC_B = [energy_conc, 1.51]
+    INDEX_DISC_C = [0, 6]
+    CONC_DISC_C = [energy_conc, 1.51]
+
+    def event_times(t):
+        if t < s1 * 60:
+            return INDEX_DISC_A, CONC_DISC_A
+        elif s1 * 60 <= t < s2 * 60:
+            return INDEX_DISC_B, CONC_DISC_B
+        else:
+            return INDEX_DISC_C, CONC_DISC_C
+
+    t_eval = np.arange(0, tmax, 5.0)
+    sol_states = []
+    times = []
+
+    u = np.array(initial_conditions)
+
+    for t in t_eval:
+        t_span = (t, t + 5.0)
+
+        res = solve_ivp(
+            fun=lambda t, u: model(t, u, params),
+            t_span=t_span,
+            y0=u,
+            method='Radau'
+        )
+        u = res.y[:, -1]
+        sol_states.append(u.copy())
+        times.append(t)
+
+        if (t % tau) < 5.0:  # simulate periodic callback
+            indices, concentrations = event_times(t)
+            u = apply_dilution(u, indices, concentrations, f_V)
+
+    total_gfp = 0.0
+    for i in range(1, len(times)):
+        dt = times[i] - times[i - 1]
+        production_rate = gfp_production_rate(sol_states[i - 1], params)
+        total_gfp += production_rate * dt
+
+    return total_gfp
+
+
+def create_3d_scatter_plot():
+    dna_vals = np.linspace(0.001, 0.1, 10)
+    energy_vals = np.linspace(30000, 60000, 10)
+    tau_vals = np.linspace(1, 180, 10)
+
+    raw_points = []
+    gfp_vals = []
+
+    total_simulations = len(dna_vals) * len(energy_vals) * len(tau_vals)
+    print(f"Running {total_simulations} simulations...")
+
+    for dna in tqdm(dna_vals, desc="DNA loop"):
+        for energy in energy_vals:
+            for tau in tau_vals:
+                total_gfp = run_simulation(dna, energy, tau)
+                if not np.isnan(total_gfp):
+                    raw_points.append((dna, energy, tau))
+                    gfp_vals.append(total_gfp)
+
+    if gfp_vals:
+        max_idx = np.argmax(gfp_vals)
+        max_point = raw_points[max_idx]
+        print(f"Max GFP: {gfp_vals[max_idx]:.4f}")
+        print(f"DNA Concentration: {max_point[0]:.4f} µM")
+        print(f"Energy Concentration: {max_point[1]:.4f} µM")
+        print(f"Dilution Interval τ: {max_point[2]:.4f} min")
+
+    raw_points = np.array(raw_points)
+    gfp_vals = np.array(gfp_vals)
+
+    sorted_idx = np.argsort(gfp_vals)
+    sorted_points = raw_points[sorted_idx]
+    sorted_gfp = gfp_vals[sorted_idx]
+
+    fig = plt.figure(figsize=(12, 9))
+    ax = fig.add_subplot(111, projection='3d')
+
+    scatter = ax.scatter(
+        sorted_points[:, 0], sorted_points[:, 1], sorted_points[:, 2],
+        c=sorted_gfp, cmap='viridis', s=20, edgecolors='k', linewidths=0.1
+    )
+    ax.set_xlabel('DNA Concentration (µM)')
+    ax.set_ylabel('Energy Concentration (µM)')
+    ax.set_zlabel('Dilution Interval τ (min)')
+    fig.colorbar(scatter, label='Total GFP Produced')
+
+    # Mark the maximum
+    ax.scatter(
+        [max_point[0]], [max_point[1]], [max_point[2]],
+        c='r', s=50, label='Maximum GFP'
+    )
+    ax.legend()
+    plt.title('Total GFP Production')
+    plt.tight_layout()
+    plt.savefig("gfp_3d_scatter_plot.png")
+    plt.show()
+
+
+if __name__ == "__main__":
+    create_3d_scatter_plot()
