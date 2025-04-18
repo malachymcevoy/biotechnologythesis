@@ -1,0 +1,81 @@
+using DataFrames, DifferentialEquations, Plots, DiffEqCallbacks
+
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+function make_discrete_dilute!(dilSpecs)
+    return function (integrator)
+        p = integrator.p
+        f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
+
+        for j in 1:Int(nspecies)
+            integrator.u[j] *= (1.0 - f_V)
+        end
+
+        if integrator.t < s1 * 60
+            for j in 1:length(dilSpecs[1])
+                integrator.u[dilSpecs[1][j]] += f_V * dilSpecs[2][j]
+            end
+        else integrator.t >= s1 * 60 && integrator.t < s2 * 60
+            for j in 1:length(dilSpecs[3])
+                integrator.u[dilSpecs[3][j]] += f_V * dilSpecs[4][j]
+            end
+        end
+    end
+end
+
+# === Setup ===
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
+               0.0, initial_conditions[2] * 0.0,
+               1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
+               3750.0, 54.75, 105.0, 100.0]
+
+tau_range = 1.0:1.0:100.0
+peak_Gm_values = Float64[]
+
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
+
+for tau_vals in tau_range  
+    dilSpecs = (
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],       # DISC_A
+        [1, 7],    [initial_conditions[1], 1.51],                              # DISC_B
+        [1, 7],    [initial_conditions[1], 1.51]                               # DISC_C
+    )
+
+    params_flat = vcat(params, [f_V, tau_vals, s1, s2, tmax, tsave, nspecies])
+
+    cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau_vals; save_positions=(false, false))
+
+    prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_flat)
+    sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
+
+    push!(peak_Gm_values, maximum(sol[6, :]))
+end
+
+max_peak_gfp = maximum(peak_Gm_values)
+max_index = argmax(peak_Gm_values)
+tau_at_max_gfp = tau_range[max_index]
+
+println("Optimal dilution interval (τ): ", tau_at_max_gfp, " minutes")
+println("Maximum peak GFP produced: ", max_peak_gfp)
+
+plot(tau_range, peak_Gm_values, xlabel="Dilution Interval (minutes)", ylabel="Peak GFP Production (µM)",
+     title="Effect of Dilution Interval on Peak GFP Production", lw=2, legend=false)
+
+scatter!([tau_at_max_gfp], [max_peak_gfp], label="Max", marker=:star5, color=:red)
+
+savefig("tau_effect_on_peak_gfp")
