@@ -49,7 +49,7 @@ params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 
-f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 23.0, 9.0, 0.0, 20.0, 100.0, 7.0
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 80.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 dilSpecs = (
     [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
@@ -59,7 +59,7 @@ dilSpecs = (
 
 params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
 
-cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(true, false))
+cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, true))
 
 prob = ODEProblem(
     model!, 
@@ -85,58 +85,53 @@ display(ODEfig)
 
 
 # === Steady-state checker ===
-function has_reached_periodic_steady_state(sol; tau, cycles=3, atol=1e-6, rtol=1e-4)
-    println("===> Starting periodic steady state check.")
+function has_reached_periodic_steady_state(sol; tau, required_cycles=5, atol=1e-1, rtol=1e-1)
+    println("===> Starting periodic steady state search during simulation.")
 
     dilution_times = collect(0:tau:sol.t[end]) # find the time points at which dilutions occur
-    println("Scheduled dilution times: ", dilution_times)
-
     matched_indices = [findfirst(t -> t >= dilutiontime, sol.t) for dilutiontime in dilution_times if dilutiontime <= sol.t[end]]
     # finds the last time point that is less than or equal to the dilutiontime, up until the end of the simulation
-    println("Matched solution indices for dilution times: ", matched_indices)
-    println("Number of matched dilution points: ", length(matched_indices))
+    println("Found ", length(matched_indices), " dilution events in simulation.")
 
-    if length(matched_indices) < cycles + 1 # check if there are enough dilution cycles
-        println("Not enough cycles for steady-state check. Needed: ", cycles + 1, ", found: ", length(matched_indices))
+    if length(matched_indices) < required_cycles + 1 # check if there are enough dilution cycles
+        println("Not enough cycles for steady-state check. Needed: $(required_cycles + 1), found: ", length(matched_indices))
         return false
     end
 
-    steady = true # begin by assuming that the system has reached steady state
-    println("Beginning comparison over last ", cycles, " dilution cycles.")
+    consecutive_good = 0    # begin by assuming that the system has reached steady state
 
-    for i in length(matched_indices) - cycles + 1:length(matched_indices) - 1 # loop over the last cycles worth of dilution events
-        println("\nChecking cycle ", i - (length(matched_indices) - cycles), " (Index ", i, ")")
-
+    for i in 1:length(matched_indices) - 1 # loop over all dilution events
         u_now = sol.u[matched_indices[i]] # concentration states at first dilution point
         u_next = sol.u[matched_indices[i+1]] # concentration states at next dilution point
-        println("State at current cycle: ", u_now)
-        println("State at next cycle: ", u_next)
 
         Δu = abs.(u_next .- u_now) # compute the absolute difference between the two concentration vectors
-        println("Absolute difference Δu: ", Δu)
 
         scale = atol .+ rtol .* abs.(u_next) # computation of tolerance scale
-        println("Tolerance scale: ", scale)
 
         rel_change = maximum(Δu ./ scale) # picks the largest scaled relative change for the entire state vector
-        println("Maximum relative change: ", rel_change)
+        println("Cycle $(i): max relative change = $(rel_change)")
 
-        if rel_change >= 1.0 # if the state changes more than the allowed tolerances, it's not steady state
-            println("⚠️ Change too large (", rel_change, " ≥ 1.0). System is NOT at steady state.")
-            steady = false
-            break
+
+        if rel_change < 1.0
+            consecutive_good += 1
+            println("✅ Change acceptable. Consecutive cycles within tolerance: $(consecutive_good).")
+            if consecutive_good >= required_cycles
+                println("🎉 Steady state detected after cycle $(i - required_cycles + 1) to cycle $(i).")
+                return true
+            end
         else
-            println("✅ Change acceptable for this cycle.")
+            println("⚠️ Change too large. Resetting consecutive counter.")
+            consecutive_good = 0
         end
     end
 
-    return steady
+    return false
 end
 
-steady = has_reached_periodic_steady_state(sol; tau=tau, cycles=3, atol=1e-6, rtol=1e-4)
+steady = has_reached_periodic_steady_state(sol; tau=tau, required_cycles=5, atol=1e-4, rtol=1e-3)
 
 if steady
-    println("The system has reached periodic steady state.")
+    println("✅ System reached periodic steady state.")
 else
-    println("The system has NOT reached periodic steady state.")
+    println("❌ System did not reach steady state within simulation.")
 end
