@@ -42,11 +42,11 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-e0_range = range(0.0, 60000.0, length=1000)
+e0_range = range(1000.0, 60000.0, length=1000)
 
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
-function simulate_and_check_steady_state(e0_range; required_cycles=5, tau=20.0, atol=1e-4, rtol=1e-3)
+function simulate_and_check_steady_state(e0_range; required_cycles=3, tau=20.0, atol=1e-4, rtol=1e-3)
     results = DataFrame(e0=Float64[], steady_state_time=Float64[])
 
     for e0 in e0_range
@@ -107,10 +107,37 @@ end
 data = simulate_and_check_steady_state(e0_range)
 
 # === Plot ===
-plot(data.e0, data.steady_state_time,
+graph = plot(data.e0, data.steady_state_time,
     xlabel = "Initial e₀ (μM)",
     ylabel = "Time to reach steady state (hours)",
     title = "Effect of initial e₀ on steady state time",
     linewidth = 2,
     legend = false
 )
+
+# === Find minimum time to steady state ===
+valid_times = data[.!isnan.(data.steady_state_time), :]
+if !isempty(valid_times)
+    min_idx = argmin(valid_times.steady_state_time)
+    min_e0 = valid_times.e0[min_idx]
+    min_time = valid_times.steady_state_time[min_idx]
+
+    scatter!([min_e0], [min_time],
+        markersize = 4, markercolor = :red, label = "Min: $(round(min_time, digits=2)) h @ e₀ = $(round(min_e0, digits=2)) μM"
+    )
+
+    num_dilutions = floor(Int, (min_time * 60) / tau)
+    println("Minimum time taken to reach steady state is $(round(min_time, digits=2)) hours, achieved at an initial energy concentration of $min_e0 μM, after $num_dilutions dilutions.")
+end
+
+# === e0 points that failed to reach steady state ===
+failed_e0s = data.e0[isnan.(data.steady_state_time)]
+
+if !isempty(failed_e0s)
+    println("‼️‼️‼️ The following e₀ values did not reach steady state:")
+    println(failed_e0s)
+else
+    println(" All e₀ values reached steady state.")
+end
+
+display(graph)

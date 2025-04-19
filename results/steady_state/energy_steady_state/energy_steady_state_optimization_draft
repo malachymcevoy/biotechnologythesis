@@ -1,0 +1,222 @@
+using DataFrames, DifferentialEquations, Plots, DiffEqCallbacks
+using Optimization, OptimizationOptimJL, OptimizationBBO
+using ForwardDiff
+
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p[1:16]
+    e, D, m, cl, G, Gm, R = u
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+function make_discrete_dilute!(dilSpecs)
+    return function (integrator)
+        p = integrator.p
+        f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
+        INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C = dilSpecs
+
+        for j in 1:Int(nspecies)
+            integrator.u[j] *= (1.0 - f_V)
+        end
+
+        if integrator.t < s1 * 60
+            for j in 1:length(INDEX_DISC_A)
+                integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
+            end
+        elseif integrator.t >= s1 * 60 && integrator.t < s2 * 60
+            for j in 1:length(INDEX_DISC_B)
+                integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
+            end
+        else
+            for j in 1:length(INDEX_DISC_C)
+                integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+            end
+        end
+    end
+end
+
+function steady_state_time(e0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
+    e0 = e0_arr[1]
+    
+    # Guard against invalid inputs that might crash the solver
+    if e0 <= 0
+        return 1000.0
+    end
+    
+    initial_conditions = [e0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+    params = [2.0, 833.0, 4.0, 236.0, 0.0 * initial_conditions[1], 0.0, initial_conditions[2] * 0.0,
+              1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
+              3750.0, 54.75, 105.0, 100.0]
+    f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
+
+    dilSpecs = (
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51]
+    )
+
+    params_flat = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies])
+    cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, true))
+
+    # Handle potential solver failures
+    try
+        prob = ODEProblem(
+            model!, initial_conditions, (0.0, 1000.0), params_flat;
+            isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
+        )
+
+        sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb, 
+                   abstol=1e-6, reltol=1e-6, maxiters=1000000)
+
+        if sol.retcode != :Success
+            return 1000.0  # High penalty for solver failure
+        end
+
+        t_detected = missing
+        dilution_times = collect(0:tau:sol.t[end])
+        matched_indices = [findfirst(t -> t >= dt, sol.t) for dt in dilution_times if dt <= sol.t[end]]
+
+        consecutive_good = 0
+        for i in 1:length(matched_indices)-1
+            u_now = sol.u[matched_indices[i]]
+            u_next = sol.u[matched_indices[i+1]]
+
+            Δu = abs.(u_next .- u_now)
+            scale = atol .+ rtol .* abs.(u_next)
+            rel_change = maximum(Δu ./ scale)
+
+            if rel_change < 1.0
+                consecutive_good += 1
+                if consecutive_good >= required_cycles
+                    t_detected = sol.t[matched_indices[i]]
+                    break
+                end
+            else
+                consecutive_good = 0
+            end
+        end
+
+        # Return time in hours, with a penalty if no steady-state
+        if ismissing(t_detected) || isnan(t_detected) || isinf(t_detected)
+            return 25.0  # 25 hours as penalty (1.5 * (1000.0 / 60))
+        else
+            return t_detected / 60
+        end
+    catch e
+        println("Error in steady_state_time: ", e)
+        return 1000.0  # High penalty for errors
+    end
+end
+
+# Function to visualize solution at a given e0
+function visualize_solution(e0)
+    initial_conditions = [e0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+    params = [2.0, 833.0, 4.0, 236.0, 0.0 * initial_conditions[1], 0.0, initial_conditions[2] * 0.0,
+              1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
+              3750.0, 54.75, 105.0, 100.0]
+    f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
+
+    dilSpecs = (
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51]
+    )
+
+    params_flat = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies])
+    cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, true))
+
+    prob = ODEProblem(
+        model!, initial_conditions, (0.0, 1000.0), params_flat;
+        isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
+    )
+
+    sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
+    
+    # Plot results
+    plot_labels = ["DNA" "mRNA" "Loaded Ribosomes" "Protein" "Mature Protein" "Free Ribosomes"]
+    p1 = plot(sol.t/60, hcat(sol[2,:], sol[3,:], sol[4,:], sol[5,:], sol[6,:], sol[7,:]), 
+         label=plot_labels, title="Cell Model with e0=$e0", 
+         xlabel="Time (hours)", ylabel="Concentration", lw=2, legend=:bottomright)
+    
+    return p1
+end
+
+# Non-gradient optimization wrapper
+function objective_func(e0_arr, _)
+    return steady_state_time(e0_arr, nothing)
+end
+
+# === Test the function at various e0 values first ===
+println("Testing steady state times at different e0 values:")
+for test_e0 in [5000.0, 10000.0, 20000.0, 30000.0, 40000.0, 50000.0]
+    time_to_steady = steady_state_time([test_e0], nothing)
+    println("e0 = $test_e0: Time to steady state = $time_to_steady hours")
+end
+
+# === Run Optimizations with different algorithms and settings ===
+e0_initial = [20000.0]
+lb, ub = [1000.0], [60000.0]
+
+println("\n=== Running Optimizations ===")
+
+# 1. BBO with increased population size
+opt_prob_bbo = OptimizationProblem(objective_func, e0_initial, nothing; lb=lb, ub=ub)
+sol_BBO = solve(opt_prob_bbo, BBO_adaptive_de_rand_1_bin_radiuslimited())
+
+# 2. Multiple-restart Nelder-Mead
+function multiple_nm_starts(initial_guess, lb, ub, num_restarts=5)
+    best_sol = nothing
+    best_obj = Inf
+    
+    for i in 1:num_restarts
+        # Generate random starting point within bounds
+        if i > 1
+            start_point = [lb[1] + rand() * (ub[1] - lb[1])]
+        else
+            start_point = initial_guess
+        end
+
+        opt_func = OptimizationFunction(objective_func, AutoForwardDiff())
+        opt_prob = OptimizationProblem(opt_func, start_point, nothing; lb=lb, ub=ub)
+        sol = solve(opt_prob, NelderMead(), maxiters=200)
+        
+        println("NM Restart $i: e0=$(sol.u[1]), objective=$(sol.objective)")
+        
+        if sol.objective < best_obj
+            best_obj = sol.objective
+            best_sol = sol
+        end
+    end
+    
+    return best_sol
+end
+
+sol_NM_multi = multiple_nm_starts(e0_initial, lb, ub, 5)
+
+# 4. Particle Swarm Optimization
+opt_prob_pso = OptimizationProblem(objective_func, e0_initial, nothing; lb=lb, ub=ub)
+sol_PSO = solve(opt_prob_pso, ParticleSwarm(n_particles=50), maxiters=100)
+
+# === Display final results ===
+println("\n=== Final Optimization Results ===")
+println("BBO: e0=$(sol_BBO.u[1]), time to steady state=$(sol_BBO.objective) hours")
+println("Multi-NM: e0=$(sol_NM_multi.u[1]), time to steady state=$(sol_NM_multi.objective) hours")
+println("PSO: e0=$(sol_PSO.u[1]), time to steady state=$(sol_PSO.objective) hours")
+
+# Visualize the optimal solution
+best_e0 = sol_BBO.objective < sol_NM_multi.objective ? 
+    (sol_BBO.objective < sol_PSO.objective ? sol_BBO.u[1] : sol_PSO.u[1]) : 
+    (sol_NM_multi.objective < sol_PSO.objective ? sol_NM_multi.u[1] : sol_PSO.u[1])
+
+println("\n=== Generating plot for optimal e0 = $best_e0 ===")
+p_optimal = visualize_solution(best_e0)
+display(p_optimal)

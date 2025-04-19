@@ -43,13 +43,13 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [14170.17017017017, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                0.0, initial_conditions[2] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 
-f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 80.0, 9.0, 0.0, 20.0, 100.0, 7.0
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 dilSpecs = (
     [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
@@ -85,7 +85,7 @@ display(ODEfig)
 
 
 # === Steady-state checker ===
-function has_reached_periodic_steady_state(sol; tau, required_cycles=5, atol=1e-1, rtol=1e-1)
+function has_reached_periodic_steady_state(sol; tau, required_cycles=5, atol=1e-4, rtol=1e-3)
     println("===> Starting periodic steady state search during simulation.")
 
     dilution_times = collect(0:tau:sol.t[end]) # find the time points at which dilutions occur
