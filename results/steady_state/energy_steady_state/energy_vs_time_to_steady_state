@@ -42,12 +42,11 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-e0_range = range(0.0, 60000.0, length=1`000)
+e0_range = range(0.0, 60000.0, length=1000)
 
-# Experiment settings
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
-function simulate_and_check_steady_state(e0_range; required_cycles=5, tau=23.0, atol=1e-4, rtol=1e-3)
+function simulate_and_check_steady_state(e0_range; required_cycles=5, tau=20.0, atol=1e-4, rtol=1e-3)
     results = DataFrame(e0=Float64[], steady_state_time=Float64[])
 
     for e0 in e0_range
@@ -99,7 +98,7 @@ function simulate_and_check_steady_state(e0_range; required_cycles=5, tau=23.0, 
             end
         end
 
-        push!(results, (e0 = e0, steady_state_time = ismissing(t_detected) ? NaN : t_detected / 60))  # convert to hours
+        push!(results, (e0 = e0, steady_state_time = ismissing(t_detected) ? NaN : t_detected / 60))  # convert simulations that never reach steady state to NaN so the plot skips them
     end
 
     return results
