@@ -9,13 +9,13 @@ function lotka_volterra(du, u, p, t)
 end
 
 
-init = [5.0, 5.0]   # Starting prey/predator populations
+initial_populations = [5.0, 5.0]   # Starting prey/predator populations
 params = [0.5, 1.0, 3.0, 1.0]     # Parameter values for α, β, γ and δ
 tspan = (0.0, 50.0)  # Timespan for the simulation to run
 
 
 # Solve the ODE Problem using Tsit5, a specific 5th-order Runge-Kutta algorithm
-prob = ODEProblem(lotka_volterra, init, tspan, params)
+prob = ODEProblem(lotka_volterra, initial_populations, tspan, params)
 sol = solve(prob, Tsit5(), abstol=1e-8, reltol=1e-8, saveat=0.1)
 
 prey_vals = sol[1, :]

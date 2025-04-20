@@ -8,12 +8,12 @@ function lotka_volterra(du, u, p, t)
     du[2] = -γ * y + δ * x * y
 end
 
-init = [5, 5] 
+initial_conditions = [5, 5] 
 params = [0.5, 1.0, 1.0, 0.5]
 t_end = 100
 tspan = (0.0, t_end)  
 
-prob = ODEProblem(lotka_volterra, init, tspan, params)
+prob = ODEProblem(lotka_volterra, initial_conditions, tspan, params)
 sol = solve(prob, Tsit5(), saveat=0.1)
 
 prey_vals = sol[1, :]

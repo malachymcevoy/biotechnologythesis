@@ -7,9 +7,12 @@ function lotka_volterra(du, u, p, t)
     du[2] = -γ * y + δ * x * y  # Predator population equation
 end
 
-#region <<< Prey birth rate optimization >>>
+
+
+# === Prey birth rate optimization ===
+
 function h(u,p)
-	α = u[1] # Optimization variable (α population)
+	α = u[1] # Optimization variable
 	β, γ, δ = p[1:3]
 	x0 = p[4]
 	y0 = p[5]
@@ -17,14 +20,12 @@ function h(u,p)
 
 	u0 = [x0, y0]
 	
-	#solve the ODE
 	prob = ODEProblem(lotka_volterra, u0, tspan, [α, β, γ, δ]; isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
 	sol = solve(prob, Tsit5())
 
 	#extract the peak prey population
 	peak_prey = maximum(sol[1, :])
 
-	# the function needs to return the peak prey
 	return -peak_prey
 end
 
@@ -37,7 +38,7 @@ ub_α = [3.0]
 opt_func_α = OptimizationFunction(h, AutoZygote())
 opt_prob_α = OptimizationProblem(opt_func_α, u0_α, p_α; lb=lb_α, ub=ub_α)
 
-opt_func_α_ipn = OptimizationFunction(h, AutoForwardDiff())
+opt_func_α_ipn = OptimizationFunction(h, AutoForwardDiff()) # use AutoForwardDiff to provide hessians for IPNewton
 opt_prob_α_ipn = OptimizationProblem(opt_func_α, u0_α, p_α; lb=lb_α, ub=ub_α)
 
 # Solve with different optimization algorithms
@@ -45,11 +46,14 @@ sol_BBO_α = solve(opt_prob_α, BBO_adaptive_de_rand_1_bin_radiuslimited())
 sol_NM_α = solve(opt_prob_α, NelderMead())
 sol_LBFGS_α = solve(opt_prob_α, LBFGS())
 sol_IPN_α = solve(opt_prob_α_ipn, IPNewton())
-#endregion
 
-#region <<< Predator birth rate optimization >>>
+
+
+
+# === Predator birth rate optimization ===
+
 function f(u,p)
-	δ = u[1] # Optimization variable (δ population)
+	δ = u[1] # Optimization variable
 	α, β, γ = p[1:3]
 	x0 = p[4]
 	y0 = p[5]
@@ -57,14 +61,11 @@ function f(u,p)
 
 	u0 = [x0, y0]
 	
-	#solve the ODE
 	prob = ODEProblem(lotka_volterra, u0, tspan, [α, β, γ, δ]; isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
 	sol = solve(prob, Tsit5())
 
-	#extract the peak predator population
 	peak_pred = maximum(sol[2, :])
 
-	# the function needs to return the peak predator
 	return -peak_pred
 end
 
@@ -85,20 +86,17 @@ sol_BBO_δ = solve(opt_prob_δ, BBO_adaptive_de_rand_1_bin_radiuslimited())
 sol_NM_δ = solve(opt_prob_δ, NelderMead())
 sol_LBFGS_δ = solve(opt_prob_δ, LBFGS())
 sol_IPN_δ = solve(opt_prob_δ_ipn, IPNewton())
-#endregion
 
-#region <<< Print results >>>
-# Print results for Prey optimization
+
+# === Print results ===
 println("Prey Optimization Results:")
-println("BBO_adaptive_de_rand_1_bin_radiuslimited: Optimal α = ", sol_BBO_α.u[1], ", Peak Prey Population = ", -sol_BBO_α.minimum)
+println("BBO algorithm: Optimal α = ", sol_BBO_α.u[1], ", Peak Prey Population = ", -sol_BBO_α.minimum)
 println("NelderMead: Optimal α = ", sol_NM_α.u[1], ", Peak Prey Population = ", -sol_NM_α.minimum)
 println("LBFGS: Optimal α = ", sol_LBFGS_α.u[1], ", Peak Prey Population = ", -sol_LBFGS_α.minimum)
 println("IPNewton: Optimal α = ", sol_IPN_α.u[1], ", Peak Prey Population = ", -sol_IPN_α.minimum)
 
-# Print results for Predator optimization
 println("\nPredator Optimization Results:")
 println("BBO_adaptive_de_rand_1_bin_radiuslimited: Optimal δ = ", sol_BBO_δ.u[1], ", Peak Predator Population = ", -sol_BBO_δ.minimum)
 println("NelderMead: Optimal δ = ", sol_NM_δ.u[1], ", Peak Predator Population = ", -sol_NM_δ.minimum)
 println("LBFGS: Optimal δ = ", sol_LBFGS_δ.u[1], ", Peak Predator Population = ", -sol_LBFGS_δ.minimum)
 println("IPNewton: Optimal δ = ", sol_IPN_δ.u[1], ", Peak Predator Population = ", -sol_IPN_δ.minimum)
-#endregion

@@ -117,7 +117,7 @@ function steady_state_time(e0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
     end
 end
 
-# Function to visualize solution at a given e0
+# === Visualise solution ===
 function visualize_solution(e0)
     initial_conditions = [e0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
     params = [2.0, 833.0, 4.0, 236.0, 0.0 * initial_conditions[1], 0.0, initial_conditions[2] * 0.0,

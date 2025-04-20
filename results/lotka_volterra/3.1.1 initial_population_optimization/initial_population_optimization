@@ -1,6 +1,5 @@
 using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, Zygote, SciMLSensitivity, LineSearches, OptimizationBBO
 
-# create the lotka_volterra function
 function lotka_volterra(du, u, p, t)
     α, β, γ, δ = p
     x, y = u
@@ -8,16 +7,16 @@ function lotka_volterra(du, u, p, t)
     du[2] = -γ * y + δ * x * y  # Predator population equation
 end
 
-#region <<< Optimization of peak prey population by changing x0 >>>
+# === Optimization of peak prey population by changing x0 ===
 function f(u,p)
-	α, β, γ, δ = p 		# Function parameters
-	x0 = u[1] 			# This is the optimization variable (initial prey population)
-	tspan = (0.0, 100.0) # Time span for the simulation
+	α, β, γ, δ = p
+	x0 = u[1] 			# Optimization variable (initial prey population)
+	tspan = (0.0, 100.0)
 
 	u0 = [x0, p[5]]		# Define the initial prey/predator populations
 	
-	prob = ODEProblem(lotka_volterra, u0, tspan, p[1:4]) # Define the ODE system
-	sol = solve(prob, Tsit5()) 	# Solve the ODE problem
+	prob = ODEProblem(lotka_volterra, u0, tspan, p[1:4])
+	sol = solve(prob, Tsit5())
 
 	peak_prey = maximum(sol[1, :]) # Extract the peak prey population from the ODE solution
 	return -peak_prey
