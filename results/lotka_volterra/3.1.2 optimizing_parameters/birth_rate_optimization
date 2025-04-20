@@ -1,4 +1,4 @@
-using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, Zygote, SciMLSensitivity, LineSearches, OptimizationBBO
+using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, Zygote, SciMLSensitivity, LineSearches, OptimizationBBO, DifferentiationInterface
 
 function lotka_volterra(du, u, p, t)
     α, β, γ, δ = p
@@ -21,7 +21,7 @@ function h(u,p)
 	u0 = [x0, y0]
 	
 	prob = ODEProblem(lotka_volterra, u0, tspan, [α, β, γ, δ]; isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
-	sol = solve(prob, Tsit5())
+	sol = solve(prob, AutoTsit5(Rosenbrock23())) # convert to stiff solver if needed
 
 	#extract the peak prey population
 	peak_prey = maximum(sol[1, :])
@@ -30,7 +30,7 @@ function h(u,p)
 end
 
 # define parameters
-p_α = [1.0, 3.0, 1.0, 5.0, 5.0] # β, γ, δ, prey_init, pred_init
+p_α = [0.5, 1.0, 3.0, 1.0, 1.0] # β, γ, δ, prey_init, pred_init
 u0_α = [1.0]
 lb_α = [0.0]
 ub_α = [3.0]
@@ -38,8 +38,8 @@ ub_α = [3.0]
 opt_func_α = OptimizationFunction(h, AutoZygote())
 opt_prob_α = OptimizationProblem(opt_func_α, u0_α, p_α; lb=lb_α, ub=ub_α)
 
-opt_func_α_ipn = OptimizationFunction(h, AutoForwardDiff()) # use AutoForwardDiff to provide hessians for IPNewton
-opt_prob_α_ipn = OptimizationProblem(opt_func_α, u0_α, p_α; lb=lb_α, ub=ub_α)
+opt_func_α_ipn = OptimizationFunction(h, SecondOrder(AutoForwardDiff(), AutoForwardDiff())) # use AutoForwardDiff to provide hessians for IPNewton
+opt_prob_α_ipn = OptimizationProblem(opt_func_α_ipn, u0_α, p_α; lb=lb_α, ub=ub_α)
 
 # Solve with different optimization algorithms
 sol_BBO_α = solve(opt_prob_α, BBO_adaptive_de_rand_1_bin_radiuslimited())
@@ -62,7 +62,7 @@ function f(u,p)
 	u0 = [x0, y0]
 	
 	prob = ODEProblem(lotka_volterra, u0, tspan, [α, β, γ, δ]; isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
-	sol = solve(prob, Tsit5())
+	sol = solve(prob, AutoTsit5(Rosenbrock23())) # convert to stiff solver if needed
 
 	peak_pred = maximum(sol[2, :])
 
@@ -78,8 +78,8 @@ ub_δ = [3.0]
 opt_func_δ = OptimizationFunction(f, AutoZygote())
 opt_prob_δ = OptimizationProblem(opt_func_δ, u0_δ, p_δ; lb=lb_δ, ub=ub_δ)
 
-opt_func_δ_ipn = OptimizationFunction(f, AutoForwardDiff())
-opt_prob_δ_ipn = OptimizationProblem(opt_func_δ, u0_δ, p_δ; lb=lb_δ, ub=ub_δ)
+opt_func_δ_ipn = OptimizationFunction(f, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
+opt_prob_δ_ipn = OptimizationProblem(opt_func_δ_ipn, u0_δ, p_δ; lb=lb_δ, ub=ub_δ)
 
 # Solve with different optimization algorithms
 sol_BBO_δ = solve(opt_prob_δ, BBO_adaptive_de_rand_1_bin_radiuslimited())

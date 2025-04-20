@@ -1,0 +1,112 @@
+using Plots, DifferentialEquations, Optimization, Zygote, SciMLSensitivity
+
+# Lotka-Volterra System
+function lotka_volterra(du, u, p, t)
+    α, β, γ, δ = p
+    x, y = u
+    du[1] = α * x - β * x * y
+    du[2] = -γ * y + δ * x * y
+end
+
+# === Objective: Prey Birth Rate α Optimization ===
+function prey_objective(u, p)
+    α = u[1]
+    β, γ, δ = p[1:3]
+    x0, y0 = p[4], p[5]
+    tspan = (0.0, 100.0)
+    u0 = [x0, y0]
+
+    prob = ODEProblem(lotka_volterra, u0, tspan, [α, β, γ, δ]; 
+                      isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
+    sol = solve(prob, AutoTsit5(Rosenbrock23()))
+    return -maximum(sol[1, :])  # Negative for maximization problem
+end
+
+# === Objective: Predator Birth Rate δ Optimization ===
+function predator_objective(u, p)
+    δ = u[1]
+    α, β, γ = p[1:3]
+    x0, y0 = p[4], p[5]
+    tspan = (0.0, 100.0)
+    u0 = [x0, y0]
+
+    prob = ODEProblem(lotka_volterra, u0, tspan, [α, β, γ, δ];
+                      isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
+    sol = solve(prob, AutoTsit5(Rosenbrock23()))
+    return -maximum(sol[2, :])  # Negative for maximization problem
+end
+
+# === Parameter Sets ===
+p_α = [0.5, 1.0, 3.0, 1.0, 1.0]   # β, γ, δ, x0, y0
+p_δ = [0.5, 1.0, 3.0, 5.0, 5.0]   # α, β, γ, x0, y0
+
+# === Evaluation Helpers ===
+function evaluate_objective(func, p, param_range)
+    results = []
+    for val in param_range
+        try
+            push!(results, -func([val], p))  # Negate to report peak value
+        catch e
+            println("Failure at $val: $e")
+            push!(results, NaN)
+        end
+    end
+    return results
+end
+
+function evaluate_gradient(func, p, param_range)
+    grads = []
+    for val in param_range
+        try
+            g = Zygote.gradient(x -> func(x, p), [val])[1][1]
+            push!(grads, -g)  # Negate since objective was negative
+        catch e
+            println("Gradient failed at $val: $e")
+            push!(grads, NaN)
+        end
+    end
+    return grads
+end
+
+# === Parameter Sweep ===
+param_sweep = 0.05:0.1:3.0  # Sweep for α and δ
+
+# === Prey Optimization ===
+prey_landscape = evaluate_objective(prey_objective, p_α, param_sweep)
+prey_gradients = evaluate_gradient(prey_objective, p_α, param_sweep)
+
+# === Predator Optimization ===
+pred_landscape = evaluate_objective(predator_objective, p_δ, param_sweep)
+pred_gradients = evaluate_gradient(predator_objective, p_δ, param_sweep)
+
+# === Print Maximum Peak Values ===
+max_prey = maximum(prey_landscape)
+max_pred = maximum(pred_landscape)
+
+println("\n============================")
+println("Prey Birth Rate Sweep (α): Maximum Peak Prey = $max_prey")
+println("Predator Birth Rate Sweep (δ): Maximum Peak Predator = $max_pred")
+println("============================\n")
+
+# === Plot: Objective Landscapes ===
+p1 = plot(param_sweep, prey_landscape, title="Prey Birth Rate (α) vs Peak Prey", 
+          xlabel="α", ylabel="Peak Prey Population", linewidth=2, label="Peak Prey")
+
+p2 = plot(param_sweep, pred_landscape, title="Predator Birth Rate (δ) vs Peak Predator", 
+          xlabel="δ", ylabel="Peak Predator Population", linewidth=2, label="Peak Predator")
+
+# === Plot: Gradients ===
+p3 = plot(param_sweep, prey_gradients, title="Gradient of Prey Objective wrt α",
+          xlabel="α", ylabel="d(Peak Prey)/dα", linewidth=2, label="Gradient", legend=false)
+
+p4 = plot(param_sweep, pred_gradients, title="Gradient of Predator Objective wrt δ",
+          xlabel="δ", ylabel="d(Peak Predator)/dδ", linewidth=2, label="Gradient", legend=false)
+
+# === Display Plots ===
+landscape_plot = plot(p1, p2, layout=(2,1), size=(800, 600))
+gradient_plot = plot(p3, p4, layout=(2,1), size=(800, 600))
+
+display(landscape_plot)
+savefig(landscape_plot, "birth_rate_optimization_landscape.png")
+display(gradient_plot)
+savefig(gradient_plot, "birth_rate_gradient_landscape")

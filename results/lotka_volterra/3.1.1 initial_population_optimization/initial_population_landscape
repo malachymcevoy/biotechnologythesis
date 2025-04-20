@@ -63,7 +63,7 @@ function compute_gradients(opt_func, p, range_values)
         try
             # Calculate gradient using Zygote
             g = Zygote.gradient(x -> opt_func(x, p), [val])[1][1]
-            push!(gradients, -g)  # Negate for consistency with max problem
+            push!(gradients, -g)
         catch e
             println("Gradient calculation failed at x0 = $val: $e")
             push!(gradients, NaN)
@@ -110,6 +110,6 @@ landscape_plot = plot(p1, p2, layout=(2,1), size=(800, 600))
 gradient_plot = plot(p3, p4, layout=(2,1), size=(800, 600))
 
 display(landscape_plot)
-savefig(landscape_plot, "initial_population_optimization_landscape")
+# savefig(landscape_plot, "initial_population_optimization_landscape")
 display(gradient_plot)
-savefig(gradient_plot, "initial_population_gradient_landscape.png")
+# savefig(gradient_plot, "initial_population_gradient_landscape.png")

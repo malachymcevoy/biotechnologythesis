@@ -73,8 +73,8 @@ begin
 	β = @bind β Slider(0.1:0.01:1.0, default = 1.0, show_value=true)
 	γ = @bind γ Slider(0.1:0.01:3.0, default = 3.0, show_value=true)
 	δ = @bind δ Slider(0.1:0.01:2.0, default = 1.0, show_value=true)
-	prey_init = @bind prey_init Slider(1:1:50, default=5, show_value=true)
-	predator_init = @bind predator_init Slider(1:1:20, default = 5, show_value=true)
+	prey_init = @bind prey_init Slider(1:1:50, default=1, show_value=true)
+	predator_init = @bind predator_init Slider(1:1:50, default=1, show_value=true)
 	
 	md"""
 	- **α (Prey Birth Rate)**: $α  
