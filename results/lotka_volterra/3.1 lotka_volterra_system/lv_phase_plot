@@ -1,5 +1,5 @@
 using DifferentialEquations, Plots
-gr(fmt=:png, dpi=2000)
+gr(fmt=:png, dpi=300)
 
 function lotka_volterra!(du, u, p, t)
     α, β, γ, δ = p

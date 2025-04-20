@@ -1,0 +1,115 @@
+using Plots, DifferentialEquations, Optim, Zygote, SciMLSensitivity, DataFrames
+gr(fmt=:png, dpi=300)
+
+function lotka_volterra(du, u, p, t)
+    α, β, γ, δ = p
+    x, y = u
+    du[1] = α * x - β * x * y 
+    du[2] = -γ * y + δ * x * y
+end
+
+# === Prey optimization function ===
+function f(u, p)
+    α, β, γ, δ = p
+    x0 = u[1]                   
+    tspan = (0.0, 100.0)
+    u0 = [x0, p[5]]
+    
+    prob = ODEProblem(lotka_volterra, u0, tspan, p[1:4], 
+                     isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
+    sol = solve(prob, Tsit5())
+    
+    peak_prey = maximum(sol[1, :]) 
+    return -peak_prey
+end
+
+# === Predator optimization function ===
+function g(u, p)
+    α, β, γ, δ = p
+    y0 = u[1]                   
+    tspan = (0.0, 100.0)
+    u0 = [p[5], y0]         
+    
+    prob = ODEProblem(lotka_volterra, u0, tspan, p[1:4], 
+                     isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
+    sol = solve(prob, Tsit5())
+    
+    peak_predator = maximum(sol[2, :]) 
+    return -peak_predator
+end
+
+
+p_prey = [0.5, 1.0, 3.0, 1.0, 1.0] 
+p_pred = [0.5, 1.0, 3.0, 1.0, 1.0]  
+
+# Function to compute objective function values across a range of initial values
+function evaluate_landscape(opt_func, p, range_values)
+    values = []
+    for val in range_values
+        try
+            obj_val = -opt_func([val], p)  # Negate to get the actual max value
+            push!(values, obj_val)
+        catch
+            push!(values, NaN)  # Handle any solver failures
+        end
+    end
+    return values
+end
+
+# Function to compute gradient at each point
+function compute_gradients(opt_func, p, range_values)
+    gradients = []
+    for val in range_values
+        try
+            # Calculate gradient using Zygote
+            g = Zygote.gradient(x -> opt_func(x, p), [val])[1][1]
+            push!(gradients, -g)  # Negate for consistency with max problem
+        catch e
+            println("Gradient calculation failed at x0 = $val: $e")
+            push!(gradients, NaN)
+        end
+    end
+    return gradients
+end
+
+initial_values = 0.1:0.5:50.0
+
+prey_landscape = evaluate_landscape(f, p_prey, initial_values)
+pred_landscape = evaluate_landscape(g, p_pred, initial_values)
+
+prey_gradients = compute_gradients(f, p_prey, initial_values)
+pred_gradients = compute_gradients(g, p_pred, initial_values)
+
+# Plot optimization landscapes
+p1 = plot(initial_values, prey_landscape, 
+     title="Prey Optimization Landscape", 
+     xlabel="Initial Prey Population", 
+     ylabel="Peak Prey Population",
+     linewidth=2, label=nothing)
+
+p2 = plot(initial_values, pred_landscape, 
+     title="Predator Optimization Landscape", 
+     xlabel="Initial Predator Population", 
+     ylabel="Peak Predator Population",
+     linewidth=2, label=nothing)
+
+# Plot gradients
+p3 = plot(initial_values, prey_gradients, 
+     title="Prey Optimization Gradient", 
+     xlabel="Initial Prey Population", 
+     ylabel="Gradient (dPeak/dInitial)",
+     linewidth=2, label=nothing)
+
+p4 = plot(initial_values, pred_gradients, 
+     title="Predator Optimization Gradient", 
+     xlabel="Initial Predator Population", 
+     ylabel="Gradient (dPeak/dInitial)",
+     linewidth=2, label=nothing)
+
+landscape_plot = plot(p1, p2, layout=(2,1), size=(800, 600))
+gradient_plot = plot(p3, p4, layout=(2,1), size=(800, 600))
+
+display(landscape_plot)
+savefig(landscape_plot, "initial_population_optimization_landscape")
+display(gradient_plot)
+savefig(gradient_plot, "initial_population_gradient_landscape.png")
