@@ -1,4 +1,4 @@
-using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, OptimizationBBO, Zygote, SciMLSensitivity, LineSearches, FFTW, Statistics, ForwardDiff
+using Plots, DifferentialEquations, Optim, OptimizationOptimJL, Optimization, OptimizationBBO, Zygote, SciMLSensitivity, LineSearches, FFTW, Statistics, ForwardDiff, DifferentiationInterface
 
 function lotka_volterra(du, u, p, t)
     α, β, γ, δ = p
@@ -38,7 +38,7 @@ function oscillation_period(u, p)
     tspan = (0, 100)
     dt = 0.1
 
-    ODEProb = ODEProblem(lotka_volterra, [x0, y0], tspan, [α, β, γ, δ])
+    ODEProb = ODEProblem(lotka_volterra, [x0, y0], tspan, [α, β, γ, δ], isoutofdomain=(u, p, t) -> any(x -> x < 0, u))
     ODESol = solve(ODEProb, Tsit5(); saveat=dt)
 
     prey_vals = ODESol[1, :]
@@ -47,7 +47,6 @@ function oscillation_period(u, p)
     return abs(computed_period - target_period)  # Minimize this difference
 end
 
-# Initial conditions and parameter bounds
 p_init = [5.0, 5.0, 18]  # Initial prey, predator, and desired period
 u0_params = [0.5, 1.0, 3.0, 1.0]  # Initial α, β, γ, δ
 lb_params = [0.01, 0.01, 0.01, 0.01]  
@@ -55,10 +54,14 @@ ub_params = [5.0, 5.0, 5.0, 5.0]
 
 opt_func = OptimizationFunction(oscillation_period, AutoForwardDiff())
 opt_prob = OptimizationProblem(opt_func, u0_params, p_init; lb=lb_params, ub=ub_params)
+
+opt_func_ipn = OptimizationFunction(oscillation_period, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
+opt_prob_ipn = OptimizationProblem(opt_func, u0_params, p_init; lb=lb_params, ub=ub_params)
+
 sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
 sol_NM = solve(opt_prob, NelderMead())
 sol_LBFGS = solve(opt_prob, LBFGS())
-sol_IPN = solve(opt_prob, IPNewton())
+sol_IPN = solve(opt_prob_ipn, IPNewton())
 
 for (name, sol) in [("Nelder-Mead", sol_NM), 
     ("BBO", sol_BBO), 
@@ -70,5 +73,3 @@ optimized_period = oscillation_period(sol.u, p_init) + p_init[3]
 println("Optimized period: ", optimized_period)
 println("Difference between optimized period and target period: ", oscillation_period(sol.u, p_init))
 end
-
-sol_LBFGS.original

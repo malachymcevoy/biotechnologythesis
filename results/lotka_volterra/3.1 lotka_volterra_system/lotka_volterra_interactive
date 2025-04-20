@@ -113,7 +113,7 @@ begin
 end
 
 # ╔═╡ 44971249-97c7-4b66-90f8-7ee2d5322709
-md"##### Return maximum prey and maximum predator values (relevant for later optimization)"
+md"##### Return maximum prey and maximum predator values (relevant for  optimization)"
 
 # ╔═╡ fd4aa34a-d5fa-4006-baee-4342f9922478
 begin
@@ -145,7 +145,7 @@ phase = plot(sol, idxs = (1,2),
 );
 
 # ╔═╡ 84465733-c14a-442c-b98c-5e0f64df45e4
-scatter!(phase, (sol(t_end)[1], sol(t_end)[2]), color = :red, markersize = 5, xlims=(0, 100), ylims=(0,50))
+scatter!(phase, (sol(t_end)[1], sol(t_end)[2]), color = :red, markersize = 5, xlims=(0, 50), ylims=(0,30))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """

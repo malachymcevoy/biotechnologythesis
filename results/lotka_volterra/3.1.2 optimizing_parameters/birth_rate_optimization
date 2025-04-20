@@ -8,7 +8,6 @@ function lotka_volterra(du, u, p, t)
 end
 
 
-
 # === Prey birth rate optimization ===
 
 function h(u,p)
