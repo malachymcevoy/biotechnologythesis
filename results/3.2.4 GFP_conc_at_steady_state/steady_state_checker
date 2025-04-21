@@ -1,0 +1,137 @@
+using DataFrames, DifferentialEquations, Plots
+
+# === Model set up ===
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p[1:16]
+    e, D, m, cl, G, Gm, R = u
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+function make_discrete_dilute!(dilSpecs)
+    return function (integrator)
+        p = integrator.p
+        f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
+        INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C = dilSpecs
+
+        for j in 1:Int(nspecies)
+            integrator.u[j] *= (1.0 - f_V)
+        end
+
+        if integrator.t < s1 * 60
+            for j in 1:length(INDEX_DISC_A)
+                integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
+            end
+        elseif integrator.t >= s1 * 60 && integrator.t < s2 * 60
+            for j in 1:length(INDEX_DISC_B)
+                integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
+            end
+        else
+            for j in 1:length(INDEX_DISC_C)
+                integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+            end
+        end
+    end
+end
+
+initial_conditions = [16532.532532532532, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
+               0.0, initial_conditions[2] * 0.0,
+               1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
+               3750.0, 54.75, 105.0, 100.0]
+
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 80.0, 9.0, 0.0, 20.0, 100.0, 7.0
+
+dilSpecs = (
+    [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+    [1, 2, 7],    [initial_conditions[1], initial_conditions[2], 1.51],    # No washout phase
+    [1, 2, 7],    [initial_conditions[1], initial_conditions[2], 1.51]
+)
+
+params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
+
+cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, true))
+
+prob = ODEProblem(
+    model!, 
+    initial_conditions, 
+    (0.0, 2000.0), 
+    params_flat;
+    isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
+)
+sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
+
+# === Plot ===
+labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
+time_vals = sol.t / 60  # Convert to hours
+ODEfig = plot()
+for i in 2:length(initial_conditions)
+    plot!(ODEfig, time_vals, sol[i, :], label=labels[i])
+end
+xlabel!("Time (hours)")
+ylabel!("μM of molecules")
+title!("ODE Model")
+display(ODEfig)
+
+
+
+# === Steady-state checker ===
+function has_reached_periodic_steady_state(sol; tau, required_cycles=5, atol=1e-3, rtol=1e-2)
+    println("===> Starting periodic steady state search during simulation.")
+
+    dilution_times = collect(0:tau:sol.t[end]) # find the time points at which dilutions occur
+    matched_indices = [findfirst(t -> t >= dilutiontime, sol.t) for dilutiontime in dilution_times if dilutiontime <= sol.t[end]]
+    # finds the last time point that is less than or equal to the dilutiontime, up until the end of the simulation
+    println("Found ", length(matched_indices), " dilution events in simulation.")
+
+    if length(matched_indices) < required_cycles + 1 # check if there are enough dilution cycles
+        println("Not enough cycles for steady-state check. Needed: $(required_cycles + 1), found: ", length(matched_indices))
+        return false
+    end
+
+    consecutive_good = 0    # begin by assuming that the system has reached steady state
+
+    for i in 1:length(matched_indices) - 1 # loop over all dilution events
+        u_now = sol.u[matched_indices[i]] # concentration states at first dilution point
+        u_next = sol.u[matched_indices[i+1]] # concentration states at next dilution point
+
+        Δu = abs.(u_next .- u_now) # compute the absolute difference between the two concentration vectors
+
+        scale = atol .+ rtol .* abs.(u_next) # computation of tolerance scale
+
+        rel_change = maximum(Δu ./ scale) # picks the largest scaled relative change for the entire state vector
+        println("Cycle $(i): max relative change = $(rel_change)")
+
+
+        if rel_change < 1.0
+            consecutive_good += 1
+            println("✅ Change acceptable. Consecutive cycles within tolerance: $(consecutive_good).")
+            if consecutive_good >= required_cycles
+                println("🎉 Steady state detected after cycle $(i - required_cycles + 1) to cycle $(i).")
+                return true
+            end
+        else
+            println("⚠️ Change too large. Resetting consecutive counter.")
+            consecutive_good = 0
+        end
+    end
+
+    return false
+end
+
+steady = has_reached_periodic_steady_state(sol; tau=tau, required_cycles=5, atol=1e-3, rtol=1e-2)
+
+if steady
+    println("✅ System reached periodic steady state.")
+else
+    println("❌ System did not reach steady state within simulation.")
+end
