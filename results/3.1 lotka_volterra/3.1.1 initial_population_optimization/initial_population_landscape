@@ -80,18 +80,43 @@ pred_landscape = evaluate_landscape(g, p_pred, initial_values)
 prey_gradients = compute_gradients(f, p_prey, initial_values)
 pred_gradients = compute_gradients(g, p_pred, initial_values)
 
-# Plot optimization landscapes
+# === Identify maximum points ===
+max_prey = maximum(prey_landscape)
+max_prey_idx = findfirst(==(max_prey), prey_landscape)
+max_prey_x = initial_values[max_prey_idx]
+
+max_pred = maximum(pred_landscape)
+max_pred_idx = findfirst(==(max_pred), pred_landscape)
+max_pred_x = initial_values[max_pred_idx]
+
+# Print max info to console instead
+println("Prey Max Peak = $(max_prey) at Initial Prey = $(max_prey_x)")
+println("Predator Max Peak = $(max_pred) at Initial Predator = $(max_pred_x)")
+
+# === Plot optimization landscapes with legend labels ===
 p1 = plot(initial_values, prey_landscape, 
      title="Prey Optimization Landscape", 
      xlabel="Initial Prey Population", 
      ylabel="Peak Prey Population",
-     linewidth=2, label=nothing)
+     linewidth=2, label="Peak Prey Population")
+
+scatter!([max_prey_x], [max_prey], 
+    markershape=:star5, 
+    markersize=5, 
+    color=:red, 
+    label="Maximum")
 
 p2 = plot(initial_values, pred_landscape, 
      title="Predator Optimization Landscape", 
      xlabel="Initial Predator Population", 
      ylabel="Peak Predator Population",
-     linewidth=2, label=nothing)
+     linewidth=2, label="Peak Predator Population")
+
+scatter!([max_pred_x], [max_pred], 
+    markershape=:star5, 
+    markersize=5, 
+    color=:blue, 
+    label="Maximum")
 
 # Plot gradients
 p3 = plot(initial_values, prey_gradients, 

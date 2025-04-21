@@ -112,7 +112,7 @@ graph = plot(data.e0, data.steady_state_time,
     ylabel = "Time to reach steady state (hours)",
     title = "Effect of initial e₀ on steady state time",
     linewidth = 2,
-    legend = false
+    label = "Time taken to reach steady state"
 )
 
 # === Find minimum time to steady state ===
@@ -141,3 +141,4 @@ else
 end
 
 display(graph)
+savefig("energy_vs_time_to_steady_state")

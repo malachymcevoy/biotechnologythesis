@@ -88,25 +88,60 @@ println("Prey Birth Rate Sweep (α): Maximum Peak Prey = $max_prey")
 println("Predator Birth Rate Sweep (δ): Maximum Peak Predator = $max_pred")
 println("============================\n")
 
-# === Plot: Objective Landscapes ===
-p1 = plot(param_sweep, prey_landscape, title="Prey Birth Rate (α) vs Peak Prey", 
-          xlabel="α", ylabel="Peak Prey Population", linewidth=2, label="Peak Prey")
+# === Identify Maximum Points ===
+max_prey = maximum(prey_landscape)
+max_prey_idx = findfirst(==(max_prey), prey_landscape)
+max_prey_param = param_sweep[max_prey_idx]
 
-p2 = plot(param_sweep, pred_landscape, title="Predator Birth Rate (δ) vs Peak Predator", 
-          xlabel="δ", ylabel="Peak Predator Population", linewidth=2, label="Peak Predator")
+max_pred = maximum(pred_landscape)
+max_pred_idx = findfirst(==(max_pred), pred_landscape)
+max_pred_param = param_sweep[max_pred_idx]
+
+# === Print Max Info to Console ===
+println("\n============================")
+println("Prey Birth Rate Sweep (α): Maximum Peak Prey = $(max_prey) at α = $(max_prey_param)")
+println("Predator Birth Rate Sweep (δ): Maximum Peak Predator = $(max_pred) at δ = $(max_pred_param)")
+println("============================\n")
+
+# === Plot: Objective Landscapes ===
+p1 = plot(param_sweep, prey_landscape, 
+          title="Prey Birth Rate (α) vs Peak Prey", 
+          xlabel="α", ylabel="Peak Prey Population",
+          linewidth=2, label="Peak Prey Population")
+
+scatter!([max_prey_param], [max_prey], 
+         markershape=:star5, 
+         markersize=5, 
+         color=:red, 
+         label="Maximum")
+
+p2 = plot(param_sweep, pred_landscape, 
+          title="Predator Birth Rate (δ) vs Peak Predator", 
+          xlabel="δ", ylabel="Peak Predator Population",
+          linewidth=2, label="Peak Predator Population")
+
+scatter!([max_pred_param], [max_pred], 
+         markershape=:star5, 
+         markersize=5, 
+         color=:blue, 
+         label="Maximum")
 
 # === Plot: Gradients ===
-p3 = plot(param_sweep, prey_gradients, title="Gradient of Prey Objective wrt α",
-          xlabel="α", ylabel="d(Peak Prey)/dα", linewidth=2, label="Gradient", legend=false)
+p3 = plot(param_sweep, prey_gradients, 
+          title="Gradient of Prey Objective wrt α",
+          xlabel="α", ylabel="d(Peak Prey)/dα",
+          linewidth=2, label="Gradient", legend=false)
 
-p4 = plot(param_sweep, pred_gradients, title="Gradient of Predator Objective wrt δ",
-          xlabel="δ", ylabel="d(Peak Predator)/dδ", linewidth=2, label="Gradient", legend=false)
+p4 = plot(param_sweep, pred_gradients, 
+          title="Gradient of Predator Objective wrt δ",
+          xlabel="δ", ylabel="d(Peak Predator)/dδ",
+          linewidth=2, label="Gradient", legend=false)
 
 # === Display Plots ===
 landscape_plot = plot(p1, p2, layout=(2,1), size=(800, 600))
 gradient_plot = plot(p3, p4, layout=(2,1), size=(800, 600))
 
 display(landscape_plot)
-savefig(landscape_plot, "birth_rate_optimization_landscape.png")
+# savefig(landscape_plot, "birth_rate_optimization_landscape.png")
 display(gradient_plot)
-savefig(gradient_plot, "birth_rate_gradient_landscape")
+# savefig(gradient_plot, "birth_rate_gradient_landscape")
