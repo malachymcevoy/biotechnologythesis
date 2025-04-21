@@ -44,7 +44,7 @@ end
 
 tau_range = 1.0:1.0:120.0
 
-function simulate_and_check_steady_state(tau_range; required_cycles=3, tau=20.0, atol=1e-4, rtol=1e-3)
+function simulate_and_check_steady_state(tau_range; required_cycles=2, tau=20.0, atol=1e-3, rtol=1e-2)
     results = DataFrame(tau_vals=Float64[], steady_state_time=Float64[])
 
     for tau_vals in tau_range

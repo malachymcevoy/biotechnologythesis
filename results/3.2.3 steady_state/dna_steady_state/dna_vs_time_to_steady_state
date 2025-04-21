@@ -1,4 +1,5 @@
 using DataFrames, DifferentialEquations, Plots, DiffEqCallbacks
+gr(fmt=:png, dpi=300)
 
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p[1:16]
@@ -46,7 +47,7 @@ D0_range = range(0.001, 0.2, length=1000)
 
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
-function simulate_and_check_steady_state(D0_range; required_cycles=3, tau=20.0, atol=1e-4, rtol=1e-3)
+function simulate_and_check_steady_state(D0_range; required_cycles=2, tau=20.0, atol=1e-3, rtol=1e-2)
     results = DataFrame(D0=Float64[], steady_state_time=Float64[])
 
     for D0 in D0_range
