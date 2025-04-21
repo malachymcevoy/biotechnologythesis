@@ -72,7 +72,7 @@ function compute_gradients(opt_func, p, range_values)
     return gradients
 end
 
-initial_values = 0.1:0.5:50.0
+initial_values = 1:1.0:50.0
 
 prey_landscape = evaluate_landscape(f, p_prey, initial_values)
 pred_landscape = evaluate_landscape(g, p_pred, initial_values)

@@ -36,7 +36,7 @@ function make_discrete_dilute!(dilSpecs)
             for j in 1:length(dilSpecs[1])
                 integrator.u[dilSpecs[1][j]] += f_V * dilSpecs[2][j]
             end
-        else integrator.t >= s1 * 60 && integrator.t < s2 * 60
+        elseif integrator.t >= s1 * 60 && integrator.t < s2 * 60
             for j in 1:length(dilSpecs[3])
                 integrator.u[dilSpecs[3][j]] += f_V * dilSpecs[4][j]
             end
