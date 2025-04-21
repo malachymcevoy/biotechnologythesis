@@ -51,7 +51,7 @@ function g(u, p)
 end
 
 p_pred = [0.5, 1.0, 3.0, 1.0, 1.0] # α, β, γ, δ and initial prey population
-u0_pred = [5.0]
+u0_pred = [5.0] # increasing this initial guess to 20.0 results in correctly converging values for LBFGS() and IPNewton(), escaping the rugged area of the function
 lb_pred, ub_pred = [0.1], [50.0]
 
 opt_func_pred = OptimizationFunction(g, AutoZygote())
