@@ -83,41 +83,39 @@ title!("ODE Model")
 display(ODEfig)
 
 
-
-# === Steady-state checker ===
-function has_reached_periodic_steady_state(sol; tau, required_cycles=5, atol=1e-3, rtol=1e-2)
+# === GFP at steady state checker ===
+function get_steady_state_GFP(sol; tau, required_cycles=5, atol=1e-3, rtol=1e-2)
     println("===> Starting periodic steady state search during simulation.")
 
-    dilution_times = collect(0:tau:sol.t[end]) # find the time points at which dilutions occur
+    dilution_times = collect(0:tau:sol.t[end])
     matched_indices = [findfirst(t -> t >= dilutiontime, sol.t) for dilutiontime in dilution_times if dilutiontime <= sol.t[end]]
-    # finds the last time point that is less than or equal to the dilutiontime, up until the end of the simulation
+
     println("Found ", length(matched_indices), " dilution events in simulation.")
 
-    if length(matched_indices) < required_cycles + 1 # check if there are enough dilution cycles
+    if length(matched_indices) < required_cycles + 1
         println("Not enough cycles for steady-state check. Needed: $(required_cycles + 1), found: ", length(matched_indices))
-        return false
+        return nothing
     end
 
-    consecutive_good = 0    # begin by assuming that the system has reached steady state
+    consecutive_good = 0
 
-    for i in 1:length(matched_indices) - 1 # loop over all dilution events
-        u_now = sol.u[matched_indices[i]] # concentration states at first dilution point
-        u_next = sol.u[matched_indices[i+1]] # concentration states at next dilution point
+    for i in 1:length(matched_indices) - 1
+        u_now = sol.u[matched_indices[i]]
+        u_next = sol.u[matched_indices[i+1]]
 
-        Δu = abs.(u_next .- u_now) # compute the absolute difference between the two concentration vectors
+        Δu = abs.(u_next .- u_now)
+        scale = atol .+ rtol .* abs.(u_next)
+        rel_change = maximum(Δu ./ scale)
 
-        scale = atol .+ rtol .* abs.(u_next) # computation of tolerance scale
-
-        rel_change = maximum(Δu ./ scale) # picks the largest scaled relative change for the entire state vector
         println("Cycle $(i): max relative change = $(rel_change)")
-
 
         if rel_change < 1.0
             consecutive_good += 1
             println("✅ Change acceptable. Consecutive cycles within tolerance: $(consecutive_good).")
             if consecutive_good >= required_cycles
-                println("🎉 Steady state detected after cycle $(i - required_cycles + 1) to cycle $(i).")
-                return true
+                GFP_concentration = u_next[5]  # element 5 corresponds to 'G'
+                println("🎉 Steady state detected after cycle $(i - required_cycles + 1) to cycle $(i). GFP = $(GFP_concentration)")
+                return GFP_concentration
             end
         else
             println("⚠️ Change too large. Resetting consecutive counter.")
@@ -125,13 +123,14 @@ function has_reached_periodic_steady_state(sol; tau, required_cycles=5, atol=1e-
         end
     end
 
-    return false
+    println("❌ Steady state not detected in the available data.")
+    return nothing
 end
 
-steady = has_reached_periodic_steady_state(sol; tau=tau, required_cycles=5, atol=1e-3, rtol=1e-2)
+steady_GFP = get_steady_state_GFP(sol; tau=tau, required_cycles=5, atol=1e-3, rtol=1e-2)
 
-if steady
-    println("✅ System reached periodic steady state.")
+if isnothing(steady_GFP)
+    println("System did not reach steady state within simulation.")
 else
-    println("❌ System did not reach steady state within simulation.")
+    println("Steady state GFP concentration: ", steady_GFP)
 end

@@ -78,7 +78,15 @@ function steady_state_time(x, p; required_cycles=3, atol=1e-4, rtol=1e-3)
 
         t_detected = missing
         dilution_times = collect(0:tau:sol.t[end])
-        matched_indices = [findfirst(t -> t >= dt, sol.t) for dt in dilution_times if dt <= sol.t[end]]
+        matched_indices = []
+        for dt in dilution_times
+            if dt <= sol.t[end]
+                idx = findfirst(t -> t >= dt, sol.t)
+                if idx !== nothing
+                    push!(matched_indices, idx)
+                end
+            end
+        end
 
         consecutive_good = 0
         for i in 1:length(matched_indices)-1
@@ -131,11 +139,11 @@ opt_prob2 = OptimizationProblem(opt_func, x_initial, nothing, lb=lb, ub=ub)
 opt_func_ipn = OptimizationFunction(steady_state_time, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
 opt_prob_ipn = OptimizationProblem(opt_func_ipn, x_initial, nothing, lb=lb, ub=ub)
 
-sol_NM = solve(opt_prob2, NelderMead())
-sol_LBFGS = solve(opt_prob2, LBFGS())
-sol_IPN = solve(opt_prob_ipn, IPNewton())
+#sol_NM = solve(opt_prob2, NelderMead())
+#sol_LBFGS = solve(opt_prob2, LBFGS())
+#sol_IPN = solve(opt_prob_ipn, IPNewton())
 
-for (name, sol) in [("BBO", sol_BBO), ("PSO", sol_PSO), ("Nelder-Mead", sol_NM), ("LBFGS", sol_LBFGS), ("IPNewton", sol_IPN)]
+for (name, sol) in [("BBO", sol_BBO), ("PSO", sol_PSO)]
     println("[$name] Termination Status: ", sol.retcode)
 
     if !isnothing(sol.u)
