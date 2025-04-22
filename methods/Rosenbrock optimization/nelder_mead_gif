@@ -1,0 +1,67 @@
+using Optim
+using Plots
+
+function create_nelder_mead_gif(output_path="rosenbrock_nelder_mead.gif")
+    # === Define the Rosenbrock Function ===
+    rosenbrock(u) = (1.0 - u[1])^2 + 100.0 * (u[2] - u[1]^2)^2
+
+    # === Initial Guess ===
+    x0 = [0.0, 0.0]  # Initial guess of [0.0, 0.0]
+
+    # === Create a manual function to track the optimization path ===
+    all_xs = Vector{Float64}[]
+    push!(all_xs, copy(x0))  # Start with initial guess
+
+    # Define a tracking callback
+    function tracker(state)
+        # Access the best point of the current simplex (first point)
+        current_x = copy(state.simplex[1, :])  # First point of the simplex
+        push!(all_xs, current_x)
+        return false  # Continue optimization
+    end
+
+    # Run optimization with our tracker
+    result = optimize(rosenbrock, x0, NelderMead(), 
+                    Optim.Options(callback = tracker))
+
+    # Extract x and y coordinates from our tracking
+    xs = [p[1] for p in all_xs]
+    ys = [p[2] for p in all_xs]
+
+    # === Create a grid for contour plot ===
+    grid_x = range(-0.5, 1.5, length=100)
+    grid_y = range(-0.5, 1.5, length=100)
+
+    # Compute the Rosenbrock function values for each grid point
+    Z = [rosenbrock([xi, yi]) for xi in grid_x, yi in grid_y]
+
+    # Create logarithmic values for better visualization
+    log_Z = log10.(Z .+ 1)  # Adding 1 to avoid log(0)
+
+    # === Generate GIF of Nelder-Mead Optimization Path ===
+    anim = @animate for i in 1:length(xs)
+        # Create contour plot
+        p = contour(grid_x, grid_y, log_Z,
+            xlabel="x", ylabel="y", levels=20,
+            linewidth=1.5, c=:viridis, 
+            title="Nelder-Mead Optimization of Rosenbrock Function\nIteration $i")
+        
+        # Plot the optimization path so far
+        plot!(xs[1:i], ys[1:i], color=:red, linewidth=2, label="")
+        scatter!([xs[i]], [ys[i]], color=:red, label="Current Position", ms=4)
+        
+        # Mark the global minimum at (1,1)
+        scatter!([1.0], [1.0], color=:green, label="Global Minimum", ms=4)
+    end every 1
+
+    # Save the animation as a GIF to the specified path
+    gif(anim, output_path, fps=5)
+    
+    println("Nelder-Mead GIF saved to: $output_path")
+end
+
+# If the output directory doesn't exist, create it first
+# mkpath("output")  # Uncomment if needed
+
+# Create and save the Nelder-Mead GIF
+create_nelder_mead_gif("rosenbrock_nelder_mead.gif")
