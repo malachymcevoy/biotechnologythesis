@@ -83,7 +83,7 @@ energy_at_max_peak_gfp = e0_range[max_index]
 println("Energy concentration for maximum peak GFP production : $energy_at_max_peak_gfp µM")
 println("Maximum peak GFP produced : $max_peak_gfp µM")
 
-GFP_vs_energy_fig = plot(e0_range, peak_Gm_values, label="Max GFP Produced",
+GFP_vs_energy_fig = plot(e0_range, peak_Gm_values, label="Peak GFP Concentration",
                          xlabel="Initial Energy Concentration (μM)",
                          ylabel="Max GFP (μM)",
                          title="GFP Production vs Initial Energy",
