@@ -107,14 +107,27 @@ end
 
 data = calculate_GFP_at_steady_state(e0_range)
 
-# === Plot ===
+# === Find maximum steady-state GFP and plot ===
+max_idx = argmax(data.steady_state_GFP)
+max_e0 = data.e0[max_idx]
+max_GFP = data.steady_state_GFP[max_idx]
+
 graph = plot(data.e0, data.steady_state_GFP,
     xlabel = "Initial e₀ (μM)",
-    ylabel = "GFP at Steady State",
+    ylabel = "GFP at Steady State (µM)",
     title = "Effect of Initial e₀ on Steady-State GFP",
     linewidth = 2,
-    label = "GFP concentration at steady state"
+    label = "GFP concentration at steady state",
+    legend = :bottomright,
+    bottom_margin = 3Plots.mm
 )
+
+scatter!([max_e0], [max_GFP],
+    markershape = :star5,
+    markersize = 5,
+    label = "Max GFP: $(round(max_GFP, digits=4)) µM at e₀=$(round(max_e0, digits=4))"
+)
+
 
 # === e0 points that failed to reach steady state ===
 failed_e0s = data.e0[isnan.(data.steady_state_GFP)]
@@ -127,4 +140,4 @@ else
 end
 
 display(graph)
-savefig("energy_vs_GFP_conc_at_steady_state")
+savefig("energy_vs_gfp_conc_at_steady_state")

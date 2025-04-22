@@ -44,7 +44,7 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-function steady_state_time(D0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
+function GFP_conc_at_steady_state(D0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
     D0 = D0_arr[1]
     
     # Guard against invalid inputs that might crash the solver
@@ -81,7 +81,7 @@ function steady_state_time(D0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
             return 1000.0  # High penalty for solver failure
         end
 
-        t_detected = missing
+        steady_GFP = missing
         dilution_times = collect(0:tau:sol.t[end])
         matched_indices = [findfirst(t -> t >= dt, sol.t) for dt in dilution_times if dt <= sol.t[end]]
 
@@ -97,7 +97,7 @@ function steady_state_time(D0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
             if rel_change < 1.0
                 consecutive_good += 1
                 if consecutive_good >= required_cycles
-                    t_detected = sol.t[matched_indices[i]]
+                    steady_GFP = sol.u[matched_indices[i]][6]
                     break
                 end
             else
@@ -105,11 +105,11 @@ function steady_state_time(D0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
             end
         end
 
-        # Return time in hours, with a penalty if no steady-state
-        if ismissing(t_detected) || isnan(t_detected) || isinf(t_detected)
-            return 25.0  # 25 hours as penalty (1.5 * (1000.0 / 60))
+        # return the concentration of GFP at steady-state
+        if ismissing(steady_GFP) || isnan(steady_GFP) || isinf(steady_GFP)
+            return 1e6  # Large penalty if no steady-state GFP was found
         else
-            return t_detected / 60
+            return -steady_GFP  # negative for maximization
         end
     catch e
         println("Error in steady_state_time: ", e)
@@ -118,7 +118,7 @@ function steady_state_time(D0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
 end
 
 function objective_func(D0_arr, _)
-    return steady_state_time(D0_arr, nothing)
+    return GFP_conc_at_steady_state(D0_arr, nothing)
 end
 
 D0_initial = [0.01]
@@ -127,13 +127,13 @@ lb, ub = [0.001], [0.2]
 println("\n=== Running Optimizations ===")
 opt_prob = OptimizationProblem(objective_func, D0_initial, nothing; lb=lb, ub=ub)
 
-sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited(), maxiters=1000)
+sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
 sol_PSO = solve(opt_prob, ParticleSwarm(n_particles=50), maxiters=100)
 
-opt_func = OptimizationFunction(steady_state_time, Optimization.AutoForwardDiff())
+opt_func = OptimizationFunction(GFP_conc_at_steady_state, Optimization.AutoForwardDiff())
 opt_prob2 = OptimizationProblem(opt_func, D0_initial, nothing, lb=lb, ub=ub)
 
-opt_func_ipn = OptimizationFunction(steady_state_time, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
+opt_func_ipn = OptimizationFunction(GFP_conc_at_steady_state, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
 opt_prob_ipn = OptimizationProblem(opt_func_ipn, D0_initial, nothing, lb=lb, ub=ub)
 
 sol_NM = solve(opt_prob2, NelderMead())
@@ -141,8 +141,8 @@ sol_LBFGS = solve(opt_prob2, LBFGS())
 sol_IPN = solve(opt_prob_ipn, IPNewton())
 
 println("\n=== Final Optimization Results ===")
-println("BBO: D0=$(sol_BBO.u[1]), time to steady state=$(sol_BBO.objective) hours")
-println("PSO: D0=$(sol_PSO.u[1]), time to steady state=$(sol_PSO.objective) hours")
-println("Nelder-Mead: D0=$(sol_NM.u[1]), time to steady state=$(sol_NM.objective) hours")
-println("LBFGS: D0=$(sol_LBFGS.u[1]), time to steady state=$(sol_LBFGS.objective) hours")
-println("IPNewton: D0=$(sol_IPN.u[1]), time to steady state=$(sol_IPN.objective) hours")
+println("BBO: D0=$(sol_BBO.u[1]), GFP concentration at steady state=$(-sol_BBO.objective) hours")
+println("PSO: D0=$(sol_PSO.u[1]), GFP concentration at steady state=$(-sol_PSO.objective) hours")
+println("Nelder-Mead: D0=$(sol_NM.u[1]), GFP concentration at steady state=$(-sol_NM.objective) hours")
+println("LBFGS: D0=$(sol_LBFGS.u[1]), GFP concentration at steady state=$(-sol_LBFGS.objective) hours")
+println("IPNewton: D0=$(sol_IPN.u[1]), GFP concentration at steady state=$(-sol_IPN.objective) hours")
