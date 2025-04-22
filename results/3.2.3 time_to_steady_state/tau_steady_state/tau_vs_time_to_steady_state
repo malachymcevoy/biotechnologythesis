@@ -109,7 +109,7 @@ data = simulate_and_check_steady_state(tau_range)
 
 # === Plot ===
 graph = plot(data.tau_vals, data.steady_state_time,
-    xlabel = "Dilution interval (μM)",
+    xlabel = "Dilution interval (minutes)",
     ylabel = "Time to reach steady state (hours)",
     title = "Effect of dilution interval on steady state time",
     linewidth = 2,

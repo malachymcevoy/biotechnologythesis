@@ -1,6 +1,7 @@
 using DataFrames, DifferentialEquations, Plots, DiffEqCallbacks, DifferentiationInterface
 using Optimization, OptimizationOptimJL, OptimizationBBO
 using ForwardDiff
+using ForwardDiff: value
 
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p[1:16]
@@ -18,45 +19,39 @@ function model!(du, u, p, t)
     du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
 end
 
-function make_discrete_dilute!(dilSpecs)
-    return function (integrator)
-        p = integrator.p
-        f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
-        INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C = dilSpecs
+function GFP_conc_at_steady_state(x, p; required_cycles=3, atol=1e-4, rtol=1e-3)    
+    f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, x[1], 9.0, 0.0, 20.0, 100.0, 7.0
 
-        for j in 1:Int(nspecies)
-            integrator.u[j] *= (1.0 - f_V)
-        end
-
-        if integrator.t < s1 * 60
-            for j in 1:length(INDEX_DISC_A)
-                integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
+    function make_discrete_dilute!(dilSpecs)
+        return function (integrator)
+            p = integrator.p
+            f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
+            INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C = dilSpecs
+    
+            for j in 1:Int(nspecies)
+                integrator.u[j] *= (1.0 - f_V)
             end
-        elseif integrator.t >= s1 * 60 && integrator.t < s2 * 60
-            for j in 1:length(INDEX_DISC_B)
-                integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
-            end
-        else
-            for j in 1:length(INDEX_DISC_C)
-                integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+    
+            if integrator.t < s1 * 60
+                for j in 1:length(INDEX_DISC_A)
+                    integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
+                end
+            elseif integrator.t >= s1 * 60 && integrator.t < s2 * 60
+                for j in 1:length(INDEX_DISC_B)
+                    integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
+                end
+            else
+                for j in 1:length(INDEX_DISC_C)
+                    integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+                end
             end
         end
     end
-end
-
-function GFP_conc_at_steady_state(D0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
-    D0 = D0_arr[1]
     
-    # Guard against invalid inputs that might crash the solver
-    if D0 <= 0
-        return 1000.0
-    end
-    
-    initial_conditions = [33600.0, D0, 0.0, 0.0, 0.0, 0.0, 1.51]
+    initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
     params = [2.0, 833.0, 4.0, 236.0, 0.0 * initial_conditions[1], 0.0, initial_conditions[2] * 0.0,
               1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
               3750.0, 54.75, 105.0, 100.0]
-    f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
     dilSpecs = (
         [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
@@ -65,7 +60,7 @@ function GFP_conc_at_steady_state(D0_arr, p; required_cycles=3, atol=1e-4, rtol=
     )
 
     params_flat = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies])
-    cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, true))
+    cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), value(tau); save_positions=(false, true))
 
     # Handle potential solver failures
     try
@@ -117,32 +112,34 @@ function GFP_conc_at_steady_state(D0_arr, p; required_cycles=3, atol=1e-4, rtol=
     end
 end
 
-function objective_func(D0_arr, _)
-    return GFP_conc_at_steady_state(D0_arr, nothing)
+function objective_func(x, _)
+    return GFP_conc_at_steady_state(x, nothing)
 end
 
-D0_initial = [0.01]
-lb, ub = [0.001], [0.2]
+tau_initial = [20.0]
+lb, ub = [1.0], [120.0]
 
 println("\n=== Running Optimizations ===")
-opt_prob = OptimizationProblem(objective_func, D0_initial, nothing; lb=lb, ub=ub)
+opt_prob = OptimizationProblem(objective_func, tau_initial, nothing; lb=lb, ub=ub)
 
 sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
 sol_PSO = solve(opt_prob, ParticleSwarm(n_particles=50), maxiters=100)
 
 opt_func = OptimizationFunction(GFP_conc_at_steady_state, Optimization.AutoForwardDiff())
-opt_prob2 = OptimizationProblem(opt_func, D0_initial, nothing, lb=lb, ub=ub)
+opt_prob2 = OptimizationProblem(opt_func, tau_initial, nothing, lb=lb, ub=ub)
 
-opt_func_ipn = OptimizationFunction(GFP_conc_at_steady_state, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
-opt_prob_ipn = OptimizationProblem(opt_func_ipn, D0_initial, nothing, lb=lb, ub=ub)
+opt_func_ipn = OptimizationFunction(steady_state_time, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
+opt_prob_ipn = OptimizationProblem(opt_func_ipn, tau_initial, nothing, lb=lb, ub=ub)
 
 sol_NM = solve(opt_prob2, NelderMead())
 sol_LBFGS = solve(opt_prob2, LBFGS())
 sol_IPN = solve(opt_prob_ipn, IPNewton())
 
+
+
 println("\n=== Final Optimization Results ===")
-println("BBO: D0=$(sol_BBO.u[1]), GFP concentration at steady state=$(-sol_BBO.objective) µM")
-println("PSO: D0=$(sol_PSO.u[1]), GFP concentration at steady state=$(-sol_PSO.objective) µM")
-println("Nelder-Mead: D0=$(sol_NM.u[1]), GFP concentration at steady state=$(-sol_NM.objective) µM")
-println("LBFGS: D0=$(sol_LBFGS.u[1]), GFP concentration at steady state=$(-sol_LBFGS.objective) µM")
-println("IPNewton: D0=$(sol_IPN.u[1]), GFP concentration at steady state=$(-sol_IPN.objective) µM")
+println("BBO: tau=$(sol_BBO.u[1]), GFP concentration at steady state=$(-sol_BBO.objective) hours")
+println("PSO: tau=$(sol_PSO.u[1]), GFP concentration at steady state=$(-sol_PSO.objective) hours")
+println("Nelder-Mead: tau=$(sol_NM.u[1]), GFP concentration at steady state=$(-sol_NM.objective) hours")
+println("LBFGS: tau=$(sol_LBFGS.u[1]), GFP concentration at steady state=$(-sol_LBFGS.objective) hours")
+println("IPNewton: tau=$(sol_IPN.u[1]), GFP concentration at steady state=$(-sol_IPN.objective) hours")
