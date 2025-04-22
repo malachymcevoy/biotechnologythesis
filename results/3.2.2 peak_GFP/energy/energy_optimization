@@ -95,7 +95,7 @@ for (name, sol) in [("Nelder-Mead", sol_NM),
     end
 
     if !isnothing(sol.objective)
-        println("  Max GFP produced using this energy concentration: ", -sol.objective, "\n")
+        println("  Peak GFP produced using this energy concentration: ", -sol.objective, "\n")
     else
         println("  Objective function value not available.\n")
     end

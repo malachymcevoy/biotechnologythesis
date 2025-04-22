@@ -1,0 +1,94 @@
+using DifferentialEquations, DiffEqCallbacks, Plots
+
+# Define the model function
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
+    e, D, m, cl, G, Gm, R = u
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+# Initial conditions for both 15000 and 60000
+initial_conditions_15000 = [15000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions_60000 = [60000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+
+params = [2.0, 833.0, 4.0, 236.0, initial_conditions_15000[1] * 0.0, 0.0, initial_conditions_15000[2] * 0.0,
+          1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
+
+# Define the callback function
+dilSpecs = (
+    [1, 2, 7], [initial_conditions_15000[1], initial_conditions_15000[2], 1.51],    # DISC_A
+    [1, 7],    [initial_conditions_15000[1], 1.51],                           # DISC_B
+)
+
+params_flat = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies])
+
+function make_discrete_dilute!(dilSpecs)
+    return function (integrator)
+        p = integrator.p
+        f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
+
+        for j in 1:Int(nspecies)
+            integrator.u[j] *= (1.0 - f_V)
+        end
+
+        if integrator.t < s1 * 60
+            for j in 1:length(dilSpecs[1])
+                integrator.u[dilSpecs[1][j]] += f_V * dilSpecs[2][j]
+            end
+        else
+            integrator.t >= s1 * 60 && integrator.t < s2 * 60
+            for j in 1:length(dilSpecs[3])
+                integrator.u[dilSpecs[3][j]] += f_V * dilSpecs[4][j]
+            end
+        end
+    end
+end
+
+cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
+
+# Solve for initial_conditions_15000
+prob_15000 = ODEProblem(model!, initial_conditions_15000, (0.0, 1000.0), params_flat)
+sol_15000 = solve(prob_15000, RadauIIA5(), saveat=1.0, callback=cb)
+
+# Solve for initial_conditions_60000
+prob_60000 = ODEProblem(model!, initial_conditions_60000, (0.0, 1000.0), params_flat)
+sol_60000 = solve(prob_60000, RadauIIA5(), saveat=1.0, callback=cb)
+
+# Labels and time conversion
+labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
+time_vals = sol_15000.t / 60
+
+# Find the peak GFP concentrations for each solution
+peak_Gm_15000 = maximum(sol_15000[6, :])
+peak_Gm_60000 = maximum(sol_60000[6, :])
+
+# Find the time of the peak GFP concentration for each solution
+peak_time_15000 = sol_15000.t[argmax(sol_15000[6, :])]
+peak_time_60000 = sol_60000.t[argmax(sol_60000[6, :])]
+
+# Plotting both solutions
+ODEfig = plot()
+plot!(ODEfig, time_vals, sol_15000[6, :], label="Gm (e0 = 15000), Peak = $(peak_Gm_15000)", linewidth=2)
+plot!(ODEfig, time_vals, sol_60000[6, :], label="Gm (e0 = 60000), Peak = $(peak_Gm_60000)", linewidth=2)
+
+# Annotate the peaks with red stars
+annotate!(peak_time_15000 / 60, peak_Gm_15000, text("★", 12, :red))
+annotate!(peak_time_60000 / 60, peak_Gm_60000, text("★", 12, :red))
+
+# Add labels and title
+xlabel!("Time (hours)")
+ylabel!("μM of molecules")
+title!("Gm Concentration for Different e0 Values")
+
+savefig("energy_peak_gfp_comparison_15000_60000_annotated.png")

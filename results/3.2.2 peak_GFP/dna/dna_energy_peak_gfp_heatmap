@@ -48,7 +48,7 @@ params = [2.0, 833.0, 4.0, 236.0, 0.0, 0.0, 0.0,
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 energy_vals = range(1000.0, 60000.0, length=200)
-dna_vals = range(0.001, 0.02, length=200)
+dna_vals = range(0.001, 0.1, length=200)
 
 peak_Gm_values = zeros(Float64, length(dna_vals), length(energy_vals))
 
