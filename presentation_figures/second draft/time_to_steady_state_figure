@@ -50,12 +50,12 @@ params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 
-f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 15.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 dilSpecs = (
     [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
-    [1, 2, 7],    [initial_conditions[1], initial_conditions[2], 1.51],    # No washout phase
-    [1, 2, 7],    [initial_conditions[1], initial_conditions[2], 1.51]
+    [1, 7],    [initial_conditions[1], 1.51],    # No washout phase
+    [1, 7],    [initial_conditions[1], 1.51]
 )
 
 params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
@@ -116,28 +116,45 @@ else
     println("🎉 Steady state reached at ~$(round(steady_state_time, digits=2)) hours.")
 end
 
-# === Plot ===
 labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
 time_vals = sol.t / 60  # Convert to hours
-ODEfig = plot()
-for i in 6:6
-    plot!(ODEfig, time_vals, sol[i, :], label=labels[i])
-end
 
+ODEfig = plot(size=(1000, 700), 
+              left_margin=5Plots.mm,
+              bottom_margin=5Plots.mm,
+              guidefont=font(20, "Arial"),
+              tickfont=font(16, "Arial"),
+              legendfont=font(16, "Arial"),
+              titlefont=font(20, "Arial"))
+
+
+
+plot!(
+    ODEfig,
+    time_vals,
+    sol[6, :],
+    linecolor=:green,
+    linewidth=2,
+    label="GFP concentration over time"
+)
+
+# Steady-state markers
 if !isempty(steady_state_events)
     gm_values = [sol(steady_time * 60)[6] for steady_time in steady_state_events]
     scatter!(
         ODEfig,
         steady_state_events, gm_values,
-        markercolor=:lightgreen, markerstrokecolor=:darkgreen,
-        markershape=:circle, label="Steady State from ~$(round(steady_state_time, digits=2)) h"
+        markercolor=:darkblue,
+        markerstrokecolor=:black,
+        markershape=:circle,
+        label="Steady State from ~$(round(steady_state_time, digits=2)) h"
     )
 end
 
 xlabel!("Time (hours)")
-ylabel!("μM of molecules")
+ylabel!("GFP concentration (μM)")
 title!("ODE Model with Steady-State Detection")
-plot!(legend=(0.68, 0.5)) 
-display(ODEfig)
+plot!(legend=(0.62, 0.55))
 
-savefig("steady_state_visualization.png")
+display(ODEfig)
+savefig("time_to_steady_state_figure.png")

@@ -1,0 +1,85 @@
+using CSV, DataFrames, Plots
+
+#region < Read and compile the flux ring CSV files >
+flux_ring1_data = CSV.read("introduction/Chemostat_data/flux_ring1.csv", DataFrame, delim='\t')
+flux_ring2_data = CSV.read("introduction/Chemostat_data/flux_ring2.csv", DataFrame, delim='\t')
+flux_ring3_data = CSV.read("introduction/Chemostat_data/flux_ring3.csv", DataFrame, delim='\t')
+flux_ring4_data = CSV.read("introduction/Chemostat_data/flux_ring4.csv", DataFrame, delim='\t')
+flux_ring5_data = CSV.read("introduction/Chemostat_data/flux_ring5.csv", DataFrame, delim='\t')
+flux_ring6_data = CSV.read("introduction/Chemostat_data/flux_ring6.csv", DataFrame, delim='\t')
+flux_ring7_data = CSV.read("introduction/Chemostat_data/flux_ring7.csv", DataFrame, delim='\t')
+flux_ring8_data = CSV.read("introduction/Chemostat_data/flux_ring8.csv", DataFrame, delim='\t')
+
+rename!(flux_ring1_data, ncol(flux_ring1_data)-1 => "flux_ring1_value",
+                            ncol(flux_ring1_data)   => "flux_ring1_error")
+rename!(flux_ring2_data, ncol(flux_ring2_data)-1 => "flux_ring2_value",
+                            ncol(flux_ring2_data)   => "flux_ring2_error")
+rename!(flux_ring3_data, ncol(flux_ring3_data)-1 => "flux_ring3_value",
+                            ncol(flux_ring3_data)   => "flux_ring3_error")
+rename!(flux_ring4_data, ncol(flux_ring4_data)-1 => "flux_ring4_value",
+                            ncol(flux_ring4_data)   => "flux_ring4_error")
+rename!(flux_ring5_data, ncol(flux_ring5_data)-1 => "flux_ring5_value",
+                            ncol(flux_ring5_data)   => "flux_ring5_error")
+rename!(flux_ring6_data, ncol(flux_ring6_data)-1 => "flux_ring6_value",
+                            ncol(flux_ring6_data)   => "flux_ring6_error")
+rename!(flux_ring7_data, ncol(flux_ring7_data)-1 => "flux_ring7_value",
+                            ncol(flux_ring7_data)   => "flux_ring7_error")
+rename!(flux_ring8_data, ncol(flux_ring8_data)-1 => "flux_ring8_value",
+                            ncol(flux_ring8_data)   => "flux_ring8_error")
+
+function shift_down(df)
+    new_row = DataFrame([(colname => 0.0) for colname in names(df)]...)
+    return vcat(new_row, df)
+end
+
+flux_ring1_data = shift_down(flux_ring1_data)
+flux_ring2_data = shift_down(flux_ring2_data)
+flux_ring3_data = shift_down(flux_ring3_data)
+flux_ring4_data = shift_down(flux_ring4_data)
+flux_ring5_data = shift_down(flux_ring5_data)
+flux_ring6_data = shift_down(flux_ring6_data)
+flux_ring7_data = shift_down(flux_ring7_data)
+flux_ring8_data = shift_down(flux_ring8_data)
+
+flux_ring1_last_two = flux_ring1_data[:, end-1:end]
+flux_ring2_last_two = flux_ring2_data[:, end-1:end]
+flux_ring3_last_two = flux_ring3_data[:, end-1:end]
+flux_ring4_last_two = flux_ring4_data[:, end-1:end]
+flux_ring5_last_two = flux_ring5_data[:, end-1:end]
+flux_ring6_last_two = flux_ring6_data[:, end-1:end]
+flux_ring7_last_two = flux_ring7_data[:, end-1:end]
+flux_ring8_last_two = flux_ring8_data[:, end-1:end]
+
+combined_df = hcat(flux_ring1_last_two, flux_ring2_last_two, flux_ring3_last_two,
+                    flux_ring4_last_two, flux_ring5_last_two, flux_ring6_last_two,
+                    flux_ring7_last_two, flux_ring8_last_two)
+#endregion
+
+combined_df = select(combined_df, ["flux_ring1_value", "flux_ring1_error", "flux_ring3_value", "flux_ring3_error", "flux_ring5_value", "flux_ring5_error", "flux_ring7_value", "flux_ring7_error"])
+constant = 714 # Constant to convert from RFU to GFP concentration
+
+flux_fig = plot(
+    size=(1000, 700),
+    left_margin=5Plots.mm,
+    bottom_margin=5Plots.mm,
+    guidefont=font(20, "Arial"),
+    tickfont=font(16, "Arial"),
+    legendfont=font(16, "Arial"),
+    titlefont=font(20, "Arial"),
+    legend=false
+)
+
+for i in [3]
+    values = combined_df[:, Symbol("flux_ring$(i)_value")] ./ constant
+    errors = combined_df[:, Symbol("flux_ring$(i)_error")] ./ constant
+    x_values = (0:length(values)-1) * 20 / 60
+    scatter!(flux_fig, x_values, values, yerr=errors, label="GFP concentration", markersize=6, markerstrokewidth=0.5)
+end
+
+xlabel!("Time (hours)")
+xlims!(0, 1000/60)
+ylabel!("GFP concentration (µM)")
+title!("Experimental GFP production")
+
+gr(fmt=:png, dpi=300)
+savefig("flux_fig")

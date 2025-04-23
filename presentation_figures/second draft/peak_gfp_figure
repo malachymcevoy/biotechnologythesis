@@ -17,10 +17,10 @@ function model!(du, u, p, t)
     du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
 end
 
-initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [60000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0, 0.0, initial_conditions[2] * 0.0,
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
-f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 15.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 dilSpecs = (
             [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],    # DISC_A
@@ -58,11 +58,44 @@ sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
 labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
 time_vals = sol.t / 60
 
-ODEfig = plot()
-for i in 2:7
-    plot!(ODEfig, time_vals, sol[i, :], label=labels[i])
-end
+# Identify peak GFP (Gm) value and time
+gfp_values = sol[6, :]
+peak_idx = argmax(gfp_values)
+peak_time = time_vals[peak_idx]
+peak_value = gfp_values[peak_idx]
+
+ODEfig = plot(size=(1000, 700), 
+              left_margin=5Plots.mm,
+              bottom_margin=5Plots.mm,
+              guidefont=font(20, "Arial"),
+              tickfont=font(16, "Arial"),
+              legendfont=font(16, "Arial"),
+              titlefont=font(20, "Arial"))
+
+# Plot Gm over time
+plot!(
+    ODEfig,
+    time_vals,
+    gfp_values,
+    linecolor=:green,
+    linewidth=2,
+    label="GFP concentration"
+)
+
+# Dot at peak GFP
+scatter!(
+    ODEfig,
+    [peak_time], [peak_value],
+    markercolor=:darkgreen,
+    markerstrokecolor=:black,
+    markershape=:circle,
+    markersize=6,
+    label="Peak GFP"
+)
+
 xlabel!("Time (hours)")
-ylabel!("μM of molecules")
+ylabel!("GFP concentration (µM)")
 title!("ODE Model with Discrete Dilution")
-display("image/png", ODEfig)
+plot!(legend=(0.65, 0.5))
+
+savefig("peak_gfp_figure.png")

@@ -20,7 +20,7 @@ end
 initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0, 0.0, initial_conditions[2] * 0.0,
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
-f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 15.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 dilSpecs = (
             [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],    # DISC_A
@@ -59,10 +59,27 @@ labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
 time_vals = sol.t / 60
 
 ODEfig = plot()
-for i in 2:7
-    plot!(ODEfig, time_vals, sol[i, :], label=labels[i])
-end
+
+plot!(
+    ODEfig,
+    time_vals,
+    sol[6, :],
+    linecolor=:green,
+    linewidth=2,
+    label="GFP concentration"
+)
+
+plot!(
+    ODEfig,
+    time_vals,
+    sol[6, :],
+    fill=(0, :yellow),
+    linecolor=:transparent,
+    label="Total GFP",
+    alpha=0.3
+)
+
 xlabel!("Time (hours)")
-ylabel!("μM of molecules")
+ylabel!("GFP concentration (µM)")
 title!("ODE Model with Discrete Dilution")
-display("image/png", ODEfig)
+savefig("total_gfp_figure.png")
