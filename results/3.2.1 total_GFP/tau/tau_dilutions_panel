@@ -141,19 +141,19 @@ for tau in tau_values_continuous
 end
 
 p2 = plot(tau_list, total_gfp_list, lw=2, color=:red, legend=false)
-xlabel!(p2, "τ (min)")
+xlabel!(p2, "Dilution interval τ (min)")
 ylabel!(p2, "Total GFP Produced (μM)")
 
 p3 = plot(tau_list, total_energy_consumed_list, lw=2, color=:orange, legend=false)
-xlabel!(p3, "τ (min)")
+xlabel!(p3, "Dilution interval τ (min)")
 ylabel!(p3, "Total Energy Consumed (μM)")
 
 p4 = plot(tau_list, total_energy_supplied_list, lw=2, color=:green, legend=false)
-xlabel!(p4, "τ (min)")
+xlabel!(p4, "Dilution interval τ (min)")
 ylabel!(p4, "Total Energy Supplied (μM)")
 
 p5 = plot(tau_list, pre_washout_dilution_list, lw=2, color=:purple, legend=false)
-xlabel!(p5, "τ (min)")
+xlabel!(p5, "Dilution interval τ (min)")
 ylabel!(p5, "Number of dilutions")
 
 # === Assemble the final figure ===
