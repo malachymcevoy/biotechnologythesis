@@ -27,7 +27,7 @@ for (i, p_vals) in enumerate(params)
 
     sol = solve(prob, Tsit5(), abstol=1e-8, reltol=1e-8, saveat=0.1)      # Solve the system with a high tolerance -> higher resolution
 
-    plot!(p, sol[1, :], sol[2, :], label="α=$α, β=$β, γ=$γ, δ=$δ", lw=2, title="Lotka-Volterra Predator Prey relationship")
+    plot!(p, sol[1, :], sol[2, :], label="α=$α, β=$β, γ=$γ, δ=$δ", lw=2)
 end
 
 savefig("lv_phase_plot.png")
