@@ -108,7 +108,7 @@ f = Figure(resolution=(800, 600))
 ax = Axis(f[1, 1], 
     xlabel="DNA Concentration (μM)", 
     ylabel="Energy Concentration (μM)",
-    titlesize=14, xlabelsize=12, ylabelsize=12, xticklabelsize=10, yticklabelsize=10
+    xlabelsize=12, ylabelsize=12, xticklabelsize=10, yticklabelsize=10
 )
 
 hm = heatmap!(ax, dna_vals, energy_vals, total_Gm_values; colormap=:viridis)

@@ -72,7 +72,7 @@ params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 f_V = 0.2
 s1, s2, tmax, tsave, nspecies = 9.0, 0.0, 20.0, 100.0, 7
-tau_values = [10, 20, 30, 40, 80]
+tau_values = [10, 20, 30, 80]
 
 # === Plot GFP at various taus ===
 GFP_plot = plot(size=(800, 500))
@@ -98,7 +98,7 @@ for tau in tau_values
     sol = solve(prob, RadauIIA5(), callback=cb, saveat=1.0)
 
     time_vals = sol.t ./ 60
-    plot!(GFP_plot, time_vals, sol[6, :], label="τ = $tau", lw=2)
+    plot!(GFP_plot, time_vals, sol[6, :], label="τ = $(tau)min", lw=2)
 
     function compute_total_gfp(sol, params)
         total_gfp_production = 0.0
