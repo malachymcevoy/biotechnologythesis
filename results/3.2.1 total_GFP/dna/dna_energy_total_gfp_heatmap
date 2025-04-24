@@ -99,12 +99,13 @@ j_max, i_max = Tuple(CartesianIndices(total_Gm_values)[max_idx])
 opt_dna = dna_vals[j_max]
 opt_energy = energy_vals[i_max]
 opt_gfp = total_Gm_values[j_max, i_max]
+
 println("Optimal DNA concentration: $(opt_dna) μM")
 println("Optimal Energy concentration: $(opt_energy) μM")
 println("Maximum Total GFP Production: $(round(opt_gfp, digits=2)) μM")
+
 f = Figure(resolution=(800, 600))
 ax = Axis(f[1, 1], 
-    title="Effect of DNA and energy concentration on Total GFP Production",
     xlabel="DNA Concentration (μM)", 
     ylabel="Energy Concentration (μM)",
     titlesize=14, xlabelsize=12, ylabelsize=12, xticklabelsize=10, yticklabelsize=10
@@ -115,6 +116,7 @@ hm = heatmap!(ax, dna_vals, energy_vals, total_Gm_values; colormap=:viridis)
 scatter!(ax, [opt_dna], [opt_energy], color=:red, markersize=12, marker=:star5)
 text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", position=(opt_dna, opt_energy), align=(:left, :bottom), fontsize=10, color=:red)
 
-Colorbar(f[1, 2], hm, label="Total GFP Output (μM)", labelsize=12, ticklabelsize=10)
+Colorbar(f[1, 2], hm, label="Total GFP Production (μM)", labelsize=12, ticklabelsize=10)
+
 display(f)
 CairoMakie.save("dna_energy_total_gfp_heatmap.png", f)

@@ -75,7 +75,7 @@ s1, s2, tmax, tsave, nspecies = 9.0, 0.0, 20.0, 100.0, 7
 tau_values = [10, 20, 30, 40, 80]
 
 # === Plot GFP at various taus ===
-GFP_plot = plot()
+GFP_plot = plot(size=(800, 500))
 for tau in tau_values
     dilution_times = [n * tau for n in 1:floor(Int, 2000.0 / tau) if n * tau <= 2000.0] # Number of dilutions
     pre_washout_dilutions = filter(t -> t < s1 * 60, dilution_times) # Number of dilutions before the washout phase begins
@@ -94,7 +94,7 @@ for tau in tau_values
 
     cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
-    prob = ODEProblem(model!, initial_conditions, (0.0, 2000.0), params_with_dilution)
+    prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_with_dilution)
     sol = solve(prob, RadauIIA5(), callback=cb, saveat=1.0)
 
     time_vals = sol.t ./ 60
@@ -141,5 +141,4 @@ end
 
 xlabel!("Time (hours)")
 ylabel!("GFP Concentration (μM)")
-title!("GFP Output at Different Dilution Intervals (τ)")
-# savefig("gfp_output_over_time_at_various_taus.png")
+savefig("gfp_output_over_time_at_various_taus.png")

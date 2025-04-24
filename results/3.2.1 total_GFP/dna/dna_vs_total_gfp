@@ -100,11 +100,10 @@ println("DNA concentration for maximum total GFP production: $(DNA_at_max_gfp) �
 println("Maximum total GFP produced: $(max_total_gfp) μM")
 
 dna_vs_energy_fig = plot(dna_vals, total_Gm_values, label="Total GFP Produced",
-                         xlabel="Initial DNA Concentration (μM)",
+                         xlabel="DNA Concentration (μM)",
                          ylabel="Total GFP Production (μM)",
-                         title="Total GFP Production vs Initial DNA",
                          linewidth=2, legend=false)
 
 scatter!([DNA_at_max_gfp], [max_total_gfp], label="Max", marker=:star5, color=:red)
 
-# savefig("dna_vs_total_gfp.png")
+savefig("dna_vs_total_gfp.png")

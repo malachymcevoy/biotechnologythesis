@@ -89,7 +89,7 @@ pre_washout_dilution_list = Int[]
 GFP_plot = plot()
 
 for tau in tau_values_continuous
-    dilution_times = [n * tau for n in 1:floor(Int, 2000.0 / tau) if n * tau <= 2000.0]
+    dilution_times = [n * tau for n in 1:floor(Int, 1000.0 / tau) if n * tau <= 1000.0]
     pre_washout_dilutions = filter(t -> t < s1 * 60, dilution_times)
 
     num_dilutions = length(dilution_times)
@@ -105,7 +105,7 @@ for tau in tau_values_continuous
     params_with_dilution = vcat(params_base, [f_V, tau, s1, s2, tmax, 0.0, nspecies])
     cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
-    prob = ODEProblem(model!, initial_conditions, (0.0, 2000.0), params_with_dilution)
+    prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_with_dilution)
     sol = solve(prob, RadauIIA5(), callback=cb, saveat=1.0)
 
     function compute_total_gfp(sol, params)
@@ -140,26 +140,22 @@ for tau in tau_values_continuous
     push!(pre_washout_dilution_list, length(pre_washout_dilutions))
 end
 
-p2 = plot(tau_list, total_gfp_list, lw=2, label="Total GFP")
+p2 = plot(tau_list, total_gfp_list, lw=2, color=:red, legend=false)
 xlabel!(p2, "τ (min)")
 ylabel!(p2, "Total GFP Produced (μM)")
-title!(p2, "B: Total GFP vs τ")
 
-p3 = plot(tau_list, total_energy_consumed_list, lw=2, label="Total Energy Consumed")
+p3 = plot(tau_list, total_energy_consumed_list, lw=2, color=:orange, legend=false)
 xlabel!(p3, "τ (min)")
 ylabel!(p3, "Total Energy Consumed (μM)")
-title!(p3, "C: Energy Consumed vs τ")
 
-p4 = plot(tau_list, total_energy_supplied_list, lw=2, label="Total Energy Supplied")
+p4 = plot(tau_list, total_energy_supplied_list, lw=2, color=:green, legend=false)
 xlabel!(p4, "τ (min)")
 ylabel!(p4, "Total Energy Supplied (μM)")
-title!(p4, "D: Energy Supplied vs τ")
 
-p5 = plot(tau_list, pre_washout_dilution_list, lw=2, label="Pre-washout Dilutions")
+p5 = plot(tau_list, pre_washout_dilution_list, lw=2, color=:purple, legend=false)
 xlabel!(p5, "τ (min)")
-ylabel!(p5, "Dilution Count")
-title!(p5, "E: Pre-washout Dilutions vs τ")
+ylabel!(p5, "Number of dilutions")
 
 # === Assemble the final figure ===
 final_plot = plot(p2, p3, p4, p5; layout=(2,2), size=(1000,800))
-# savefig(final_plot, "tau_vs_gfp_energy_dilutions.png")
+savefig(final_plot, "tau_vs_gfp_energy_dilutions.png")
