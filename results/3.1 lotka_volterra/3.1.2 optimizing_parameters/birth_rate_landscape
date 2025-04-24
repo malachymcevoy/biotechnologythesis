@@ -105,43 +105,37 @@ println("============================\n")
 
 # === Plot: Objective Landscapes ===
 p1 = plot(param_sweep, prey_landscape, 
-          title="Prey Birth Rate (α) vs Peak Prey", 
           xlabel="α", ylabel="Peak Prey Population",
-          linewidth=2, label="Peak Prey Population")
+          linewidth=2, color=:blue, legend=false)
 
 scatter!([max_prey_param], [max_prey], 
          markershape=:star5, 
          markersize=5, 
-         color=:red, 
-         label="Maximum")
+         color=:blue)
 
 p2 = plot(param_sweep, pred_landscape, 
-          title="Predator Birth Rate (δ) vs Peak Predator", 
           xlabel="δ", ylabel="Peak Predator Population",
-          linewidth=2, label="Peak Predator Population")
+          linewidth=2, color=:red, legend=false)
 
 scatter!([max_pred_param], [max_pred], 
          markershape=:star5, 
          markersize=5, 
-         color=:blue, 
-         label="Maximum")
+         color=:red)
 
 # === Plot: Gradients ===
 p3 = plot(param_sweep, prey_gradients, 
-          title="Gradient of Prey Objective wrt α",
-          xlabel="α", ylabel="d(Peak Prey)/dα",
-          linewidth=2, label="Gradient", legend=false)
+          xlabel="Prey birth rate (α)", ylabel="Gradient",
+          linewidth=2, legend=false, color=:blue)
 
-p4 = plot(param_sweep, pred_gradients, 
-          title="Gradient of Predator Objective wrt δ",
-          xlabel="δ", ylabel="d(Peak Predator)/dδ",
-          linewidth=2, label="Gradient", legend=false)
+p4 = plot(param_sweep, pred_gradients,
+          xlabel="Predator birth rate (δ)", ylabel="Gradient",
+          linewidth=2, legend=false, color=:red)
 
 # === Display Plots ===
 landscape_plot = plot(p1, p2, layout=(2,1), size=(800, 600))
 gradient_plot = plot(p3, p4, layout=(2,1), size=(800, 600))
 
 display(landscape_plot)
-# savefig(landscape_plot, "birth_rate_optimization_landscape.png")
+savefig(landscape_plot, "birth_rate_optimization_landscape.png")
 display(gradient_plot)
-# savefig(gradient_plot, "birth_rate_gradient_landscape")
+savefig(gradient_plot, "birth_rate_gradient_landscape")

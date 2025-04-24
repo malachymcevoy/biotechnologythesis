@@ -95,46 +95,45 @@ println("Predator Max Peak = $(max_pred) at Initial Predator = $(max_pred_x)")
 
 # === Plot optimization landscapes with legend labels ===
 p1 = plot(initial_values, prey_landscape, 
-     title="Prey Optimization Landscape", 
      xlabel="Initial Prey Population", 
      ylabel="Peak Prey Population",
-     linewidth=2, label="Peak Prey Population")
+     linewidth=2,
+     color=:blue)
 
 scatter!([max_prey_x], [max_prey], 
     markershape=:star5, 
     markersize=5, 
-    color=:red, 
-    label="Maximum")
+    color=:blue, 
+    legend=false)
 
-p2 = plot(initial_values, pred_landscape, 
-     title="Predator Optimization Landscape", 
+p2 = plot(initial_values, pred_landscape,
      xlabel="Initial Predator Population", 
      ylabel="Peak Predator Population",
-     linewidth=2, label="Peak Predator Population")
+     linewidth=2, color=:red)
 
 scatter!([max_pred_x], [max_pred], 
     markershape=:star5, 
     markersize=5, 
-    color=:blue, 
-    label="Maximum")
+    color=:red, 
+    legend=false)
 
 # Plot gradients
 p3 = plot(initial_values, prey_gradients, 
-     title="Prey Optimization Gradient", 
      xlabel="Initial Prey Population", 
-     ylabel="Gradient (dPeak/dInitial)",
+     ylabel="Gradient",
+     color=:blue,
      linewidth=2, label=nothing)
 
 p4 = plot(initial_values, pred_gradients, 
-     title="Predator Optimization Gradient", 
      xlabel="Initial Predator Population", 
-     ylabel="Gradient (dPeak/dInitial)",
+     ylabel="Gradient",
+     color=:red,
      linewidth=2, label=nothing)
 
 landscape_plot = plot(p1, p2, layout=(2,1), size=(800, 600))
 gradient_plot = plot(p3, p4, layout=(2,1), size=(800, 600))
 
 display(landscape_plot)
-# savefig(landscape_plot, "initial_population_optimization_landscape")
+savefig(landscape_plot, "initial_population_optimization_landscape")
 display(gradient_plot)
-# `savefig(gradient_plot, "initial_population_gradient_landscape.png")
+savefig(gradient_plot, "initial_population_gradient_landscape.png")

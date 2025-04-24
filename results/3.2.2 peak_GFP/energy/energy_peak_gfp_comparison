@@ -85,16 +85,19 @@ peak_time_60000 = sol_60000.t[argmax(sol_60000[6, :])]
 
 # Plotting both solutions
 ODEfig = plot()
-plot!(ODEfig, time_vals, sol_15000[6, :], label="Gm (e0 = 15000), Peak = $(peak_Gm_15000)", linewidth=2)
-plot!(ODEfig, time_vals, sol_60000[6, :], label="Gm (e0 = 60000), Peak = $(peak_Gm_60000)", linewidth=2)
+plot!(ODEfig, time_vals, sol_15000[6, :], label="e₀ = 15000µM", linewidth=2)
+plot!(ODEfig, time_vals, sol_60000[6, :], label="e₀ = 60000µM", linewidth=2)
 
-# Annotate the peaks with red stars
-annotate!(peak_time_15000 / 60, peak_Gm_15000, text("★", 12, :red))
-annotate!(peak_time_60000 / 60, peak_Gm_60000, text("★", 12, :red))
+scatter!([peak_time_15000 / 60], [peak_Gm_15000],
+        label="Peak = $(round(peak_Gm_15000, digits=3))µM", color=:blue, marker=:star5, markersize=8)
+
+scatter!([peak_time_60000 / 60], [peak_Gm_60000],
+        label="Peak = $(round(peak_Gm_60000, digits=3))µM", color=:orange, marker=:star5, markersize=8)
 
 # Add labels and title
 xlabel!("Time (hours)")
-ylabel!("μM of molecules")
-title!("Gm Concentration for Different e0 Values")
+ylabel!("GFP Concentration (µM)")
+plot!(legend=(0.32, 0.25))
 
-savefig("energy_peak_gfp_comparison_15000_60000_annotated.png")
+
+savefig("energy_peak_gfp_comparison.png")

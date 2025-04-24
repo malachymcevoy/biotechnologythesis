@@ -85,10 +85,9 @@ println("Maximum peak GFP produced : $max_peak_gfp µM")
 
 GFP_vs_energy_fig = plot(e0_range, peak_Gm_values, label="Peak GFP Concentration",
                          xlabel="Initial Energy Concentration (μM)",
-                         ylabel="Max GFP (μM)",
-                         title="GFP Production vs Initial Energy",
-                         linewidth=2, legend=:bottomright)
+                         ylabel="Peak GFP Concentration (μM)",
+                         linewidth=2, legend=false)
 
-scatter!([energy_at_max_peak_gfp], [max_peak_gfp], label="Max", marker=:star5, color=:red)
+scatter!([energy_at_max_peak_gfp], [max_peak_gfp], marker=:star5, color=:red)
 
 savefig("energy_vs_peak_gfp.png")
