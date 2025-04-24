@@ -111,10 +111,9 @@ data = simulate_and_check_steady_state(tau_range)
 graph = plot(data.tau_vals, data.steady_state_time,
     xlabel = "Dilution interval (minutes)",
     ylabel = "Time to reach steady state (hours)",
-    title = "Effect of dilution interval on steady state time",
     linewidth = 2,
     label = "Time taken to reach steady state",
-    legend = :bottomright)
+    legend = false)
 
 # === Find minimum time to steady state ===
 valid_times = data[.!isnan.(data.steady_state_time), :]
@@ -124,7 +123,7 @@ if !isempty(valid_times)
     min_time = valid_times.steady_state_time[min_idx]
 
     scatter!([min_tau_vals], [min_time],
-        markersize = 4, markercolor = :red, label = "Min: $(round(min_time, digits=2)) h @ D₀ = $(round(min_tau_vals, digits=2)) μM"
+        marker=:star5, markercolor = :red, label = "Min: $(round(min_time, digits=2)) h @ D₀ = $(round(min_tau_vals, digits=2)) μM"
     )
 
     num_dilutions = floor(Int, (min_time * 60) / tau)

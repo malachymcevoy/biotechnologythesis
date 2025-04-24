@@ -43,16 +43,16 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-D0_range = range(0.001, 0.2, length=1000)
+e0_range = range(1000.0, 60000.0, length=1000)
 
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
-function simulate_and_check_steady_state(D0_range; required_cycles=2, tau=20.0, atol=1e-3, rtol=1e-2)
-    results = DataFrame(D0=Float64[], steady_state_time=Float64[])
+function simulate_and_check_steady_state(e0_range; required_cycles=2, tau=20.0, atol=1e-3, rtol=1e-2)
+    results = DataFrame(e0=Float64[], steady_state_time=Float64[])
 
-    for D0 in D0_range
+    for e0 in e0_range
 
-        initial_conditions = [33600.0, D0, 0.0, 0.0, 0.0, 0.0, 1.51]
+        initial_conditions = [e0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
         params = [2.0, 833.0, 4.0, 236.0, 0.0,
                     0.0, initial_conditions[2] * 0.0,
                     1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
@@ -99,47 +99,54 @@ function simulate_and_check_steady_state(D0_range; required_cycles=2, tau=20.0, 
             end
         end
 
-        push!(results, (D0 = D0, steady_state_time = ismissing(t_detected) ? NaN : t_detected / 60))  # convert simulations that never reach steady state to NaN so the plot skips them
+        push!(results, (e0 = e0, steady_state_time = ismissing(t_detected) ? NaN : t_detected / 60))  # convert simulations that never reach steady state to NaN so the plot skips them
     end
 
     return results
 end
 
-data = simulate_and_check_steady_state(D0_range)
+data = simulate_and_check_steady_state(e0_range)
 
 # === Plot ===
-graph = plot(data.D0, data.steady_state_time,
-    xlabel = "Initial D₀ (μM)",
+graph = plot(data.e0, data.steady_state_time,
+    xlabel = "Energy concentration (μM)",
     ylabel = "Time to reach steady state (hours)",
-    title = "Effect of initial DNA on steady state time",
     linewidth = 2,
-    label = "Time taken to reach steady state"
+    legend=false
 )
 
 # === Find minimum time to steady state ===
 valid_times = data[.!isnan.(data.steady_state_time), :]
 if !isempty(valid_times)
     min_idx = argmin(valid_times.steady_state_time)
-    min_D0 = valid_times.D0[min_idx]
+    min_e0 = valid_times.e0[min_idx]
     min_time = valid_times.steady_state_time[min_idx]
 
-    scatter!([min_D0], [min_time],
-        markersize = 4, markercolor = :red, label = "Min: $(round(min_time, digits=2)) h @ D₀ = $(round(min_D0, digits=2)) μM"
+    scatter!([min_e0], [min_time],
+        marker=:star54, markercolor = :red
     )
 
     num_dilutions = floor(Int, (min_time * 60) / tau)
-    println("Minimum time taken to reach steady state is $(round(min_time, digits=2)) hours, achieved at an initial DNA concentration of $min_D0 μM, after $num_dilutions dilutions.")
+    println("Minimum time taken to reach steady state is $(round(min_time, digits=2)) hours, achieved at an initial energy concentration of $min_e0 μM, after $num_dilutions dilutions.")
 end
 
-# === D0 points that failed to reach steady state ===
-failed_D0s = data.D0[isnan.(data.steady_state_time)]
+# === Find maximum time to steady state ===
+if !isempty(valid_times)
+    max_idx = argmax(valid_times.steady_state_time)
+    max_e0 = valid_times.e0[max_idx]
+    max_time = valid_times.steady_state_time[max_idx]
 
-if !isempty(failed_D0s)
-    println("‼️‼️‼️ The following D₀ values did not reach steady state:")
-    println(failed_D0s)
+    println("Maximum time taken to reach steady state is $(round(max_time, digits=2)) hours, at an initial energy concentration of $max_e0 μM.")
+end
+# === e0 points that failed to reach steady state ===
+failed_e0s = data.e0[isnan.(data.steady_state_time)]
+
+if !isempty(failed_e0s)
+    println("‼️‼️‼️ The following e₀ values did not reach steady state:")
+    println(failed_e0s)
 else
-    println(" All D₀ values reached steady state.")
+    println(" All e₀ values reached steady state.")
 end
 
 display(graph)
-savefig("dna_vs_time_to_steady_state")
+savefig("energy_vs_time_to_steady_state")

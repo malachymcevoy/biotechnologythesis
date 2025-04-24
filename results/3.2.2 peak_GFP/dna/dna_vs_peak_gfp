@@ -83,8 +83,8 @@ println("DNA concentration for maximum peak GFP production : $dna_at_max_peak_gf
 println("Maximum peak GFP produced : $max_peak_gfp µM")
 
 # Plot GFP vs. DNA concentration (D0) for fixed energy concentration (e0)
-plot(dna_vals, peak_Gm_values, xlabel="DNA Concentration (μM)", ylabel="Peak GFP Output",
-     title="Effect of DNA Concentration on Peak GFP", label="Peak GFP", linewidth=2)
-scatter!([dna_at_max_peak_gfp], [max_peak_gfp], label="Max", marker=:star5, color=:red)
+plot(dna_vals, peak_Gm_values, xlabel="DNA Concentration (μM)", ylabel="Peak GFP Output (µM)",
+        label="Peak GFP", linewidth=2, legend=false)
+scatter!([dna_at_max_peak_gfp], [max_peak_gfp], marker=:star5, color=:red)
 
 savefig("dna_vs_peak_gfp")

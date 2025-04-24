@@ -114,16 +114,13 @@ max_GFP = data.steady_state_GFP[max_idx]
 
 graph = plot(data.tau_vals, data.steady_state_GFP,
     xlabel = "Dilution interval (minutes)",
-    ylabel = "GFP at steady state (µM)",
-    title = "Effect of dilution interval on GFP at steady state",
+    ylabel = "GFP concentration at steady state (µM)",
     linewidth = 2,
-    label = "GFP concentration at steady state",
-    legend = :bottomright)
+    legend = false)
 
 scatter!([max_tau_val], [max_GFP],
     markershape = :star5,
-    markersize = 5,
-    label = "Max GFP: $(round(max_GFP, digits=4)) at D₀ = $(round(max_tau_val, digits=4)) minutes"
+    markersize = 5
 )
 
 # ===Tau points that failed to reach steady state ===

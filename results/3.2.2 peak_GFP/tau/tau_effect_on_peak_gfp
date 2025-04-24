@@ -74,7 +74,7 @@ println("Optimal dilution interval (τ): ", tau_at_max_gfp, " minutes")
 println("Maximum peak GFP produced: ", max_peak_gfp)
 
 plot(tau_range, peak_Gm_values, xlabel="Dilution Interval (minutes)", ylabel="Peak GFP Concentration (µM)",
-     title="Effect of Dilution Interval on Peak GFP Production", lw=2, legend=false)
+     lw=2, legend=false)
 
 scatter!([tau_at_max_gfp], [max_peak_gfp], label="Max", marker=:star5, color=:red)
 

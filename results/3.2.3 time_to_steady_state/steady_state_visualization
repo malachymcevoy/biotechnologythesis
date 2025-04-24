@@ -120,7 +120,7 @@ end
 labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
 time_vals = sol.t / 60  # Convert to hours
 ODEfig = plot()
-for i in 6:6
+for i in 2:7
     plot!(ODEfig, time_vals, sol[i, :], label=labels[i])
 end
 
@@ -136,7 +136,6 @@ end
 
 xlabel!("Time (hours)")
 ylabel!("μM of molecules")
-title!("ODE Model with Steady-State Detection")
 plot!(legend=(0.68, 0.5)) 
 display(ODEfig)
 

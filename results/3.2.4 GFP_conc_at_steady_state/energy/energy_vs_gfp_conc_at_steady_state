@@ -113,12 +113,10 @@ max_e0 = data.e0[max_idx]
 max_GFP = data.steady_state_GFP[max_idx]
 
 graph = plot(data.e0, data.steady_state_GFP,
-    xlabel = "Initial e₀ (μM)",
-    ylabel = "GFP at Steady State (µM)",
-    title = "Effect of Initial e₀ on Steady-State GFP",
+    xlabel = "Energy concentration (μM)",
+    ylabel = "GFP concentration at steady state (µM)",
     linewidth = 2,
-    label = "GFP concentration at steady state",
-    legend = :bottomright,
+    legend = false,
     bottom_margin = 3Plots.mm
 )
 
