@@ -89,10 +89,9 @@ println("Optimal Energy concentration: $(opt_energy) μM")
 println("Maximum Peak GFP Production: $(round(opt_gfp, digits=2)) μM")
 f = Figure(resolution=(800, 600))
 ax = Axis(f[1, 1], 
-    title="Effect of DNA and energy concentration on Peak GFP Production",
     xlabel="DNA Concentration (μM)", 
     ylabel="Energy Concentration (μM)",
-    titlesize=14, xlabelsize=12, ylabelsize=12, xticklabelsize=10, yticklabelsize=10
+    xlabelsize=12, ylabelsize=12, xticklabelsize=10, yticklabelsize=10
 )
 
 hm = heatmap!(ax, dna_vals, energy_vals, peak_Gm_values; colormap=:viridis)
@@ -100,6 +99,7 @@ hm = heatmap!(ax, dna_vals, energy_vals, peak_Gm_values; colormap=:viridis)
 scatter!(ax, [opt_dna], [opt_energy], color=:red, markersize=12, marker=:star5)
 text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", position=(opt_dna, opt_energy), align=(:left, :bottom), fontsize=10, color=:red)
 
-Colorbar(f[1, 2], hm, label="Peak GFP Output (μM)", labelsize=12, ticklabelsize=10)
+Colorbar(f[1, 2], hm, label="Peak GFP Concentration (μM)", labelsize=12, ticklabelsize=10)
+
 display(f)
 CairoMakie.save("dna_energy_peak_gfp_heatmap.png", f)

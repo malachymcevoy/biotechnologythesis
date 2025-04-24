@@ -121,13 +121,7 @@ time_vals = sol.t / 60  # Convert to hours
 
 ODEfig = plot(size=(1000, 700), 
               left_margin=5Plots.mm,
-              bottom_margin=5Plots.mm,
-              guidefont=font(20, "Arial"),
-              tickfont=font(20, "Arial"),
-              legendfont=font(20, "Arial"),
-              titlefont=font(34, "Arial"))
-
-
+              bottom_margin=5Plots.mm)
 
 plot!(
     ODEfig,
@@ -135,7 +129,7 @@ plot!(
     sol[6, :],
     linecolor=:green,
     linewidth=2,
-    label="GFP concentration"
+    legend=false
 )
 
 # Steady-state markers
@@ -148,14 +142,10 @@ if !isempty(steady_state_events)
         markerstrokecolor=:red,
         markershape=:circle,
         markersize=7,
-        label="Steady State Reached"
     )
 end
 
 xlabel!("Time (hours)")
 ylabel!("GFP concentration (μM)")
-title!("Steady-State Optimization")
-plot!(legend=(0.32, 0.25))
 
-display(ODEfig)
 savefig("time_to_steady_state_figure.png")

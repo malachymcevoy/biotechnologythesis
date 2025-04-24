@@ -66,11 +66,7 @@ peak_value = gfp_values[peak_idx]
 
 ODEfig = plot(size=(1000, 700), 
               left_margin=5Plots.mm,
-              bottom_margin=5Plots.mm,
-              guidefont=font(20, "Arial"),
-              tickfont=font(20, "Arial"),
-              legendfont=font(20, "Arial"),
-              titlefont=font(34, "Arial"))
+              bottom_margin=5Plots.mm)
 
 # Plot Gm over time
 plot!(
@@ -79,7 +75,7 @@ plot!(
     gfp_values,
     linecolor=:green,
     linewidth=2,
-    label="GFP concentration"
+    legend=false
 )
 
 # Dot at peak GFP
@@ -89,13 +85,10 @@ scatter!(
     markercolor=:orange,
     markerstrokecolor=:red,
     markershape=:circle,
-    markersize=10,
-    label="Peak GFP"
+    markersize=10
 )
 
 xlabel!("Time (hours)")
 ylabel!("GFP concentration (µM)")
-title!("Optimization of Peak GFP")
-plot!(legend=(0.35, 0.3))
 
 savefig("peak_gfp_figure.png")

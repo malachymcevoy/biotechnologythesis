@@ -60,18 +60,14 @@ time_vals = sol.t / 60
 
 ODEfig = plot(size=(1000, 700), 
               left_margin=5Plots.mm,
-              bottom_margin=5Plots.mm,
-              guidefont=font(20, "Arial"),
-              tickfont=font(20, "Arial"),
-              legendfont=font(20, "Arial"),
-              titlefont=font(34, "Arial"))
+              bottom_margin=5Plots.mm)
 plot!(
     ODEfig,
     time_vals,
     sol[6, :],
     linecolor=:green,
     linewidth=2,
-    label="GFP concentration"
+    legend=false
 )
 
 plot!(
@@ -80,12 +76,10 @@ plot!(
     sol[6, :],
     fill=(0, :yellow),
     linecolor=:transparent,
-    label="Total GFP",
     alpha=0.3
 )
 
 xlabel!("Time (hours)")
 ylabel!("GFP concentration (µM)")
-plot!(legend=(0.71, 0.8))
-title!("Optimization of total GFP")
+
 savefig("total_gfp_figure.png")
