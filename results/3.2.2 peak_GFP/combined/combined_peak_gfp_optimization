@@ -1,4 +1,4 @@
-using DataFrames, DifferentialEquations, Plots, Optimization, OptimizationOptimJL, Zygote, DiffEqCallbacks, SciMLSensitivity, OptimizationBBO
+using DataFrames, DifferentialEquations, Plots, Optimization, OptimizationOptimJL, Zygote, DiffEqCallbacks, SciMLSensitivity, OptimizationBBO, DifferentiationInterface
 using ForwardDiff: value
 
 function model!(du, u, p, t)
@@ -66,13 +66,17 @@ end
 x_initial = [100.0, 55000.0, 0.012]
 lb, ub = [10.0, 1000.0, 0.001], [180.0, 60000.0, 0.1]
 
+opt_func_ipn = OptimizationFunction(optimizer, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
+opt_prob_ipn = OptimizationProblem(opt_func_ipn, x_initial; lb=lb, ub=ub)
+
 opt_func = OptimizationFunction(optimizer, AutoForwardDiff())
 opt_prob = OptimizationProblem(opt_func, x_initial; lb=lb, ub=ub)
+
 
 sol_BBO = solve(opt_prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
 sol_NM = solve(opt_prob, NelderMead())
 sol_LBFGS = solve(opt_prob, LBFGS())
-# sol_IPN = solve(opt_prob, IPNewton())
+# sol_IPN = solve(opt_prob_ipn, IPNewton())
 
 for (name, sol) in [("BBO", sol_BBO), ("Nelder-Mead", sol_NM), ("LBFGS", sol_LBFGS)]
     println("[$name] Termination Status: ", sol.retcode)

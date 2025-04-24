@@ -44,7 +44,7 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [24000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                0.0, initial_conditions[2] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
@@ -54,8 +54,8 @@ f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 dilSpecs = (
     [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
-    [1, 2, 7],    [initial_conditions[1], initial_conditions[2], 1.51],    # No washout phase
-    [1, 2, 7],    [initial_conditions[1], initial_conditions[2], 1.51]
+    [1, 7],    [initial_conditions[1], initial_conditions[2], 1.51],    # No washout phase
+    [1, 7],    [initial_conditions[1], initial_conditions[2], 1.51]
 )
 
 params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
@@ -72,7 +72,7 @@ prob = ODEProblem(
 sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
 
 # === Steady-state checker with event marking ===
-function detect_steady_state_time_and_events(sol; tau, required_cycles=5, atol=1e-3, rtol=1e-2)
+function detect_steady_state_time_and_events(sol; tau, required_cycles=2, atol=1e-3, rtol=1e-2)
     dilution_times = collect(0:tau:sol.t[end])
     matched_indices = [findfirst(t -> t >= dilutiontime, sol.t) for dilutiontime in dilution_times if dilutiontime <= sol.t[end]]
     if length(matched_indices) < required_cycles + 1
@@ -107,7 +107,7 @@ function detect_steady_state_time_and_events(sol; tau, required_cycles=5, atol=1
 end
 
 steady_state_time, steady_state_events = detect_steady_state_time_and_events(
-    sol; tau=tau, required_cycles=5, atol=1e-3, rtol=1e-2
+    sol; tau=tau, required_cycles=2, atol=1e-3, rtol=1e-2
 )
 
 if isnothing(steady_state_time)
