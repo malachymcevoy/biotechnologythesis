@@ -1,6 +1,5 @@
 using DifferentialEquations, DiffEqCallbacks, Plots
 
-# Define the model function
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
     e, D, m, cl, G, Gm, R = u
@@ -26,9 +25,14 @@ params = [2.0, 833.0, 4.0, 236.0, initial_conditions_15000[1] * 0.0, 0.0, initia
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 # Define the callback function
-dilSpecs = (
+dilSpecs_15000 = (
     [1, 2, 7], [initial_conditions_15000[1], initial_conditions_15000[2], 1.51],    # DISC_A
     [1, 7],    [initial_conditions_15000[1], 1.51],                           # DISC_B
+)
+
+dilSpecs_60000 = (
+    [1, 2, 7], [initial_conditions_60000[1], initial_conditions_60000[2], 1.51],
+    [1, 7],    [initial_conditions_60000[1], 1.51],
 )
 
 params_flat = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies])
@@ -58,12 +62,14 @@ end
 cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
 # Solve for initial_conditions_15000
+cb_15000 = PeriodicCallback(make_discrete_dilute!(dilSpecs_15000), tau; save_positions=(false, false))
 prob_15000 = ODEProblem(model!, initial_conditions_15000, (0.0, 1000.0), params_flat)
-sol_15000 = solve(prob_15000, RadauIIA5(), saveat=1.0, callback=cb)
+sol_15000 = solve(prob_15000, RadauIIA5(), saveat=1.0, callback=cb_15000)
 
 # Solve for initial_conditions_60000
+cb_60000 = PeriodicCallback(make_discrete_dilute!(dilSpecs_60000), tau; save_positions=(false, false))
 prob_60000 = ODEProblem(model!, initial_conditions_60000, (0.0, 1000.0), params_flat)
-sol_60000 = solve(prob_60000, RadauIIA5(), saveat=1.0, callback=cb)
+sol_60000 = solve(prob_60000, RadauIIA5(), saveat=1.0, callback=cb_60000)
 
 # Labels and time conversion
 labels = ["e", "D", "m", "cl", "G", "Gm", "R"]

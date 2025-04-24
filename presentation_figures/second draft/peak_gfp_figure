@@ -17,10 +17,10 @@ function model!(du, u, p, t)
     du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
 end
 
-initial_conditions = [60000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [15000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0, 0.0, initial_conditions[2] * 0.0,
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
-f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 15.0, 9.0, 0.0, 20.0, 100.0, 7.0
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 dilSpecs = (
             [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],    # DISC_A
@@ -68,9 +68,9 @@ ODEfig = plot(size=(1000, 700),
               left_margin=5Plots.mm,
               bottom_margin=5Plots.mm,
               guidefont=font(20, "Arial"),
-              tickfont=font(16, "Arial"),
-              legendfont=font(16, "Arial"),
-              titlefont=font(20, "Arial"))
+              tickfont=font(20, "Arial"),
+              legendfont=font(20, "Arial"),
+              titlefont=font(34, "Arial"))
 
 # Plot Gm over time
 plot!(
@@ -86,16 +86,16 @@ plot!(
 scatter!(
     ODEfig,
     [peak_time], [peak_value],
-    markercolor=:darkgreen,
-    markerstrokecolor=:black,
+    markercolor=:orange,
+    markerstrokecolor=:red,
     markershape=:circle,
-    markersize=6,
+    markersize=10,
     label="Peak GFP"
 )
 
 xlabel!("Time (hours)")
 ylabel!("GFP concentration (µM)")
-title!("ODE Model with Discrete Dilution")
-plot!(legend=(0.65, 0.5))
+title!("Optimization of Peak GFP")
+plot!(legend=(0.35, 0.3))
 
 savefig("peak_gfp_figure.png")

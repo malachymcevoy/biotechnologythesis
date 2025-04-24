@@ -44,7 +44,7 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [15000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                0.0, initial_conditions[2] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
@@ -123,9 +123,9 @@ ODEfig = plot(size=(1000, 700),
               left_margin=5Plots.mm,
               bottom_margin=5Plots.mm,
               guidefont=font(20, "Arial"),
-              tickfont=font(16, "Arial"),
-              legendfont=font(16, "Arial"),
-              titlefont=font(20, "Arial"))
+              tickfont=font(20, "Arial"),
+              legendfont=font(20, "Arial"),
+              titlefont=font(34, "Arial"))
 
 
 
@@ -135,7 +135,7 @@ plot!(
     sol[6, :],
     linecolor=:green,
     linewidth=2,
-    label="GFP concentration over time"
+    label="GFP concentration"
 )
 
 # Steady-state markers
@@ -144,17 +144,18 @@ if !isempty(steady_state_events)
     scatter!(
         ODEfig,
         steady_state_events, gm_values,
-        markercolor=:darkblue,
-        markerstrokecolor=:black,
+        markercolor=:orange,
+        markerstrokecolor=:red,
         markershape=:circle,
-        label="Steady State from ~$(round(steady_state_time, digits=2)) h"
+        markersize=7,
+        label="Steady State Reached"
     )
 end
 
 xlabel!("Time (hours)")
 ylabel!("GFP concentration (μM)")
-title!("ODE Model with Steady-State Detection")
-plot!(legend=(0.62, 0.55))
+title!("Steady-State Optimization")
+plot!(legend=(0.32, 0.25))
 
 display(ODEfig)
 savefig("time_to_steady_state_figure.png")
