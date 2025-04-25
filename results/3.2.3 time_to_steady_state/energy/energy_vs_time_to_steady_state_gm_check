@@ -1,0 +1,152 @@
+using DataFrames, DifferentialEquations, Plots, DiffEqCallbacks
+gr(fmt=:png, dpi=300)
+
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p[1:16]
+    e, D, m, cl, G, Gm, R = u
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+function make_discrete_dilute!(dilSpecs)
+    return function (integrator)
+        p = integrator.p
+        f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
+        INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C = dilSpecs
+
+        for j in 1:Int(nspecies)
+            integrator.u[j] *= (1.0 - f_V)
+        end
+
+        if integrator.t < s1 * 60
+            for j in 1:length(INDEX_DISC_A)
+                integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
+            end
+        elseif integrator.t >= s1 * 60 && integrator.t < s2 * 60
+            for j in 1:length(INDEX_DISC_B)
+                integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
+            end
+        else
+            for j in 1:length(INDEX_DISC_C)
+                integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+            end
+        end
+    end
+end
+
+e0_range = range(1000.0, 60000.0, length=1000)
+
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
+
+function simulate_and_check_steady_state(e0_range; required_cycles=2, tau=20.0, atol=1e-3, rtol=1e-2)
+    results = DataFrame(e0=Float64[], steady_state_time=Float64[])
+
+    for e0 in e0_range
+
+        initial_conditions = [e0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+        params = [2.0, 833.0, 4.0, 236.0, 0.0,
+                    0.0, initial_conditions[2] * 0.0,
+                    1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
+                    3750.0, 54.75, 105.0, 100.0]
+
+        dilSpecs = (
+            [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+            [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+            [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51]
+        )
+
+        params_flat = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies])
+        cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, true))
+
+        prob = ODEProblem(
+            model!, initial_conditions, (0.0, 1000.0), params_flat;
+            isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
+        )
+
+        sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
+
+        # Steady state detection
+        t_detected = missing
+        dilution_times = collect(0:tau:sol.t[end])
+        matched_indices = [findfirst(t -> t >= dt, sol.t) for dt in dilution_times if dt <= sol.t[end]]
+
+        consecutive_good = 0
+        for i in 1:length(matched_indices)-1
+            u_now = sol.u[matched_indices[i]]
+            u_next = sol.u[matched_indices[i+1]]
+
+            ΔGm = abs(u_next[6] - u_now[6])
+            scale = atol + rtol * abs(u_next[6])
+            rel_change = ΔGm / scale
+
+            if rel_change < 1.0
+                consecutive_good += 1
+                if consecutive_good >= required_cycles
+                    t_detected = sol.t[matched_indices[i]]
+                    break
+                end
+            else
+                consecutive_good = 0
+            end
+        end
+
+        push!(results, (e0 = e0, steady_state_time = ismissing(t_detected) ? NaN : t_detected / 60))  # convert simulations that never reach steady state to NaN so the plot skips them
+    end
+
+    return results
+end
+
+data = simulate_and_check_steady_state(e0_range)
+
+# === Plot ===
+graph = plot(data.e0, data.steady_state_time,
+    xlabel = "Energy concentration (μM)",
+    ylabel = "Time to reach steady state (hours)",
+    linewidth = 2,
+    legend=false
+)
+
+# === Find minimum time to steady state ===
+valid_times = data[.!isnan.(data.steady_state_time), :]
+if !isempty(valid_times)
+    min_idx = argmin(valid_times.steady_state_time)
+    min_e0 = valid_times.e0[min_idx]
+    min_time = valid_times.steady_state_time[min_idx]
+
+    scatter!([min_e0], [min_time],
+        marker=:star54, markercolor = :red
+    )
+
+    num_dilutions = floor(Int, (min_time * 60) / tau)
+    println("Minimum time taken to reach steady state is $(round(min_time, digits=2)) hours, achieved at an initial energy concentration of $min_e0 μM, after $num_dilutions dilutions.")
+end
+
+# === Find maximum time to steady state ===
+if !isempty(valid_times)
+    max_idx = argmax(valid_times.steady_state_time)
+    max_e0 = valid_times.e0[max_idx]
+    max_time = valid_times.steady_state_time[max_idx]
+
+    println("Maximum time taken to reach steady state is $(round(max_time, digits=2)) hours, at an initial energy concentration of $max_e0 μM.")
+end
+# === e0 points that failed to reach steady state ===
+failed_e0s = data.e0[isnan.(data.steady_state_time)]
+
+if !isempty(failed_e0s)
+    println("‼️‼️‼️ The following e₀ values did not reach steady state:")
+    println(failed_e0s)
+else
+    println(" All e₀ values reached steady state.")
+end
+
+display(graph)
+savefig("energy_vs_time_to_steady_state")

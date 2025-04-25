@@ -125,7 +125,7 @@ for (i, color) in zip([10000.0, 24000.0, 60000.0], colors)
     # === Plot ===
     labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
     time_vals = sol.t / 60  # Convert to hours
-    data_index = 6  # Index for Gm
+    data_index = 3  # Index for Gm
 
     plot!(ODEfig, time_vals, sol[data_index, :], color=color, legend=false)
 
@@ -141,10 +141,10 @@ for (i, color) in zip([10000.0, 24000.0, 60000.0], colors)
     end
 
     xlabel!("Time (hours)")
-    ylabel!("GFP Concentration (µM)") 
+    ylabel!("mRNA Concentration (µM)") 
     display(ODEfig)
 
     println("At e₀=$i, steady state detected at ~$(round(steady_state_time, digits=2))h")
 end
 
-savefig("steady_state_energy_comparison.png")
+savefig("mRNA_conc_at_various_e0s.png")
