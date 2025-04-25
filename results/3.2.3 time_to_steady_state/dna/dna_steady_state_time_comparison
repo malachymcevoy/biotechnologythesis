@@ -52,11 +52,6 @@ params_base = [2.0, 833.0, 4.0, 236.0, 0.0,
 
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
-dilSpecs = (
-    [1, 2, 7], [33600.0, 0.005, 1.51],
-    [1, 2, 7], [33600.0, 0.005, 1.51],
-    [1, 2, 7], [33600.0, 0.005, 1.51]
-)
 
 params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
 
@@ -73,6 +68,13 @@ for (i, D0) in enumerate(DNA_concentrations)
 
     # Recreate params_flat with the new initial conditions
     params_flat[6] = initial_conditions[2] * 0.0  # Update D (related to DNA concentration)
+    
+    dilSpecs = (
+    [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+    [1, 7], [initial_conditions[1], 1.51],
+    [1, 7], [initial_conditions[1], 1.51]
+    )
+
     cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
     # Create and solve the ODE

@@ -60,8 +60,8 @@ for (i, color) in zip([10000.0, 24000.0, 60000.0], colors)
 
     dilSpecs = (
         [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
-        [1, 7],    [initial_conditions[1], initial_conditions[2], 1.51],    # No washout phase
-        [1, 7],    [initial_conditions[1], initial_conditions[2], 1.51]
+        [1, 7],    [initial_conditions[1],  1.51],
+        [1, 7],    [initial_conditions[1], 1.51]
     )
 
     params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
