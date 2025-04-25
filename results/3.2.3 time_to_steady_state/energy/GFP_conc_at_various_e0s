@@ -147,4 +147,4 @@ for (i, color) in zip([10000.0, 24000.0, 60000.0], colors)
     println("At e₀=$i, steady state detected at ~$(round(steady_state_time, digits=2))h")
 end
 
-savefig("steady_state_energy_comparison.png")
+savefig("GFP_conc_at_various_e0s.png")

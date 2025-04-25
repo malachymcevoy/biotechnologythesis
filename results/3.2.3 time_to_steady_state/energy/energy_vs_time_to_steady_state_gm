@@ -47,7 +47,7 @@ e0_range = range(1000.0, 60000.0, length=1000)
 
 f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
-function simulate_and_check_steady_state(e0_range; required_cycles=2, tau=20.0, atol=1e-3, rtol=1e-2)
+function simulate_and_check_steady_state(e0_range; required_cycles=3, tau=20.0, atol=1e-3, rtol=1e-2)
     results = DataFrame(e0=Float64[], steady_state_time=Float64[])
 
     for e0 in e0_range
@@ -110,7 +110,7 @@ data = simulate_and_check_steady_state(e0_range)
 # === Plot ===
 graph = plot(data.e0, data.steady_state_time,
     xlabel = "Energy concentration (μM)",
-    ylabel = "Time to reach steady state (hours)",
+    ylabel = "Time for Gₘ to reach steady state (hrs)",
     linewidth = 2,
     legend=false
 )
@@ -149,4 +149,4 @@ else
 end
 
 display(graph)
-savefig("energy_vs_time_to_steady_state")
+savefig("energy_vs_time_to_steady_state_gm")
