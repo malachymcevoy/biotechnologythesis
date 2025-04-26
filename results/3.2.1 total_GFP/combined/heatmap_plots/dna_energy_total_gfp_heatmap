@@ -120,7 +120,7 @@ contour!(ax, dna_vals, energy_vals, total_Gm_values,
          color=:white)
 
 scatter!(ax, [opt_dna], [opt_energy], color=:red, markersize=12, marker=:star5)
-text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", position=(opt_dna+0.005, opt_energy-3000), align=(:left, :bottom), fontsize=18, color=:red)
+text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", position=(opt_dna+0.001, opt_energy-3000), align=(:left, :bottom), fontsize=18, color=:red)
 
 Colorbar(f[1, 2], hm, label="Total GFP Production (μM)", labelsize=18, ticklabelsize=15)
 

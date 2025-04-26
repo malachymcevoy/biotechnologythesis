@@ -115,12 +115,10 @@ contour!(ax, tau_vals, energy_vals, total_Gm_values,
          linewidth=1.5,
          color=:white)
 
-
-
 scatter!(ax, [opt_tau], [opt_energy], color=:red, markersize=12, marker=:star5)
 text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", 
-      position=(opt_tau, opt_energy), 
-      align=(:left, :bottom), fontsize=15, color=:red)
+      position=(opt_tau + 1, opt_energy - 3000), 
+      align=(:left, :bottom), fontsize=18, color=:red)
 
 Colorbar(f[1, 2], hm, label="Total GFP Production (μM)", labelsize=18, ticklabelsize=15)
 

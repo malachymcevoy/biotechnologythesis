@@ -112,4 +112,4 @@ Colorbar(f[1, 2], hm,
          ticklabelsize=15)
 
 display(f)
-CairoMakie.save("dna_energy_peak_gfp_heatmap_with_contours.png", f)
+CairoMakie.save("dna_energy_peak_gfp_heatmap.png", f)
