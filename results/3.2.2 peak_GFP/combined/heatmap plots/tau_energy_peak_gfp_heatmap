@@ -90,17 +90,11 @@ contour!(ax, tau_vals, energy_vals, peak_Gm_values,
          linewidth=1.5,
          color=:white)
 
-contour!(ax, tau_vals, energy_vals, peak_Gm_values, 
-         levels=levels[1:3:end], 
-         linewidth=2.0,
-         color=:white)
-
-
 scatter!(ax, [opt_tau], [opt_energy], color=:red, markersize=15, marker=:star5)
 text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", 
       position=(opt_tau - 22.5, opt_energy - 2000), # Shifted down by 2000 units
       align=(:left, :center), 
-      fontsize=15, 
+      fontsize=18, 
       color=:red,
       font=:bold)
 
@@ -110,4 +104,4 @@ Colorbar(f[1, 2], hm,
          ticklabelsize=15)
 
 display(f)
-CairoMakie.save("tau_energy_peak_gfp_heatmap_with_contours.png", f)
+CairoMakie.save("tau_energy_peak_gfp_heatmap.png", f)

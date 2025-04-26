@@ -101,7 +101,7 @@ scatter!(ax, [opt_dna], [opt_tau], color=:red, markersize=15, marker=:star5)
 text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", 
       position=(opt_dna + 0.003, opt_tau),
       align=(:left, :center), 
-      fontsize=15, 
+      fontsize=18, 
       color=:red,
       font=:bold)
 
@@ -111,4 +111,4 @@ Colorbar(f[1, 2], hm,
          ticklabelsize=15)
 
 display(f)
-CairoMakie.save("dna_tau_peak_gfp_heatmap_with_contours.png", f)
+CairoMakie.save("dna_tau_peak_gfp_heatmap.png", f)

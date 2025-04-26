@@ -92,17 +92,12 @@ contour!(ax, dna_vals, energy_vals, peak_Gm_values,
          linewidth=1.5,
          color=:white)
 
-contour!(ax, dna_vals, energy_vals, peak_Gm_values, 
-         levels=levels[1:3:end], 
-         linewidth=2.0,
-         color=:white)
-
 
 scatter!(ax, [opt_dna], [opt_energy], color=:red, markersize=15, marker=:star5)
 text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", 
-      position=(opt_dna + 0.0005, opt_energy - 2000), # Shifted down by 2000 units
+      position=(opt_dna + 0.0005, opt_energy - 2000),
       align=(:left, :center), 
-      fontsize=15, 
+      fontsize=18, 
       color=:red,
       font=:bold)
 
