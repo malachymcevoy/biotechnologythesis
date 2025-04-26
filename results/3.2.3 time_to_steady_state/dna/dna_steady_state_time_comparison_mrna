@@ -1,0 +1,157 @@
+using DataFrames, DifferentialEquations, Plots
+gr(fmt=:png, dpi=300)
+
+# === Model set up ===
+function model!(du, u, p, t)
+    qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p[1:16]
+    e, D, m, cl, G, Gm, R = u
+
+    vtx = D * (ktx / ng) * (e / (Ktx + e))
+    vtl = cl * (ktl / nG) * (e / (Ktl + e))
+
+    du[1] = - (vtx * qx * ng + vtl * ql * nG) + ein - mu * e
+    du[2] = Din - mu * D
+    du[3] = vtx - kb * R * m + ku * cl + vtl - kd * m - mu * m
+    du[4] = kb * R * m - ku * cl - vtl - kd * cl - mu * cl
+    du[5] = vtl - km * G - mu * G
+    du[6] = km * G - mu * Gm
+    du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
+end
+
+ODEfig = plot()  # New plot for each loop iteration
+
+function make_discrete_dilute!(dilSpecs)
+    return function (integrator)
+        p = integrator.p
+        f_V, tau, s1, s2, _, _, nspecies = p[end-6:end]
+        INDEX_DISC_A, CONC_DISC_A, INDEX_DISC_B, CONC_DISC_B, INDEX_DISC_C, CONC_DISC_C = dilSpecs
+
+        for j in 1:Int(nspecies)
+            integrator.u[j] *= (1.0 - f_V)
+        end
+
+        if integrator.t < s1 * 60
+            for j in 1:length(INDEX_DISC_A)
+                integrator.u[INDEX_DISC_A[j]] += f_V * CONC_DISC_A[j]
+            end
+        elseif integrator.t >= s1 * 60 && integrator.t < s2 * 60
+            for j in 1:length(INDEX_DISC_B)
+                integrator.u[INDEX_DISC_B[j]] += f_V * CONC_DISC_B[j]
+            end
+        else
+            for j in 1:length(INDEX_DISC_C)
+                integrator.u[INDEX_DISC_C[j]] += f_V * CONC_DISC_C[j]
+            end
+        end
+    end
+end
+
+# === Run simulations for different initial conditions ===
+colors = [:black, :red, :blue, :green]  # Define color mapping for initial conditions
+
+for (i, color) in zip([0.001, 0.005, 0.01, 0.1], colors)
+    initial_conditions = [33600.0, i, 0.0, 0.0, 0.0, 0.0, 1.51]
+    params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
+                0.0, initial_conditions[2] * 0.0,
+                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
+                3750.0, 54.75, 105.0, 100.0]
+
+    f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
+
+    dilSpecs = (
+        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
+        [1, 7],    [initial_conditions[1], 1.51],
+        [1, 7],    [initial_conditions[1], 1.51]
+    )
+
+    params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
+
+    cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
+
+    prob = ODEProblem(
+        model!, 
+        initial_conditions, 
+        (0.0, 540.0), 
+        params_flat;
+        isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
+    )
+    sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
+
+    # === Steady-state checker with event marking ===
+    function detect_steady_state_time_and_events(sol; tau, required_cycles=2, atol=1e-3, rtol=1e-2)
+        dilution_times = collect(0:tau:sol.t[end])
+        matched_indices = [findfirst(t -> t >= dilutiontime, sol.t) for dilutiontime in dilution_times if dilutiontime <= sol.t[end]]
+        if length(matched_indices) < required_cycles + 1
+            return nothing, []
+        end
+
+        consecutive_good = 0
+        first_detection_time = nothing
+        steady_state_events = Float64[]
+
+        for i in 1:length(matched_indices) - 1
+            u_now = sol.u[matched_indices[i]]
+            u_next = sol.u[matched_indices[i+1]]
+
+            ΔGm = abs(u_next[6] - u_now[6])
+            scale = atol + rtol * abs(u_next[6])
+            rel_change = ΔGm / scale
+
+            if rel_change < 1.0
+                consecutive_good += 1
+                if consecutive_good >= required_cycles
+                    if isnothing(first_detection_time)
+                        first_detection_time = sol.t[matched_indices[i - required_cycles + 1]] / 60.0  # convert to hours
+                    end
+                    push!(steady_state_events, sol.t[matched_indices[i+1]] / 60.0)  # mark this dilution event
+                end
+            else
+                consecutive_good = 0
+            end
+        end
+        return first_detection_time, steady_state_events
+    end
+
+    steady_state_time, steady_state_events = detect_steady_state_time_and_events(
+        sol; tau=tau, required_cycles=2, atol=1e-3, rtol=1e-2
+    )
+    
+    if isnothing(steady_state_time)
+        println("❌ System did not reach steady state within simulation.")
+        println("At e₀=$i, steady state not detected.")
+    else
+        rounded_time = round(steady_state_time, digits=2)
+        println("🎉 Steady state reached at ~$rounded_time hours.")
+        println("At e₀=$i, steady state detected at ~$rounded_time h")
+    end
+    
+    # === Plot ===
+    labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
+    time_vals = sol.t / 60  # Convert to hours
+    data_index = 3  # Index for Gm
+    
+    y_vals = sol[data_index, :]
+    y_vals = [v > 0 ? v : NaN for v in y_vals]
+    plot!(ODEfig, time_vals, y_vals, color=color, legend=false, yaxis=:log10)
+    
+    # Add steady state events to the plot using the same color as the corresponding line
+    if !isempty(steady_state_events)
+        gm_values = [sol(steady_time * 60)[data_index] for steady_time in steady_state_events]
+        gm_values = replace(gm_values, 0.0 => NaN)
+        scatter!(
+            ODEfig,
+            steady_state_events, gm_values,
+            markershape=:circle,
+            color=color,
+            yaxis=:log10
+        )
+    end
+    
+    xlabel!("Time (hours)")
+    ylabel!("mRNA Concentration (µM)") 
+    display(ODEfig)
+
+    println("At e₀=$i, steady state detected at ~$(round(steady_state_time, digits=2))h")
+end
+
+savefig("dna_steady_state_comparison_gm.png")
