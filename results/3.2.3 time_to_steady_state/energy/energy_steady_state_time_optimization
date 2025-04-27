@@ -90,9 +90,9 @@ function steady_state_time(e0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
             u_now = sol.u[matched_indices[i]]
             u_next = sol.u[matched_indices[i+1]]
 
-            Δu = abs.(u_next .- u_now)
-            scale = atol .+ rtol .* abs.(u_next)
-            rel_change = maximum(Δu ./ scale)
+            ΔGm = abs(u_next[6] - u_now[6])
+            scale = atol + rtol * abs(u_next[6])
+            rel_change = ΔGm / scale
 
             if rel_change < 1.0
                 consecutive_good += 1
