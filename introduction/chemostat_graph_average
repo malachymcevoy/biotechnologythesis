@@ -1,4 +1,4 @@
-using CSV, DataFrames, Plots
+using CSV, DataFrames, Plots, Statistics
 
 #region < Read and compile the flux ring CSV files >
 flux_ring1_data = CSV.read("introduction/Chemostat_data/flux_ring1.csv", DataFrame, delim='\t')
@@ -50,26 +50,39 @@ flux_ring6_last_two = flux_ring6_data[:, end-1:end]
 flux_ring7_last_two = flux_ring7_data[:, end-1:end]
 flux_ring8_last_two = flux_ring8_data[:, end-1:end]
 
-combined_df = hcat(flux_ring1_last_two, flux_ring2_last_two, flux_ring3_last_two,
-                    flux_ring4_last_two, flux_ring5_last_two, flux_ring6_last_two,
-                    flux_ring7_last_two, flux_ring8_last_two)
-#endregion
+# Select relevant columns
+selected_df = select(combined_df, [
+    "flux_ring1_value", "flux_ring1_error",
+    "flux_ring3_value", "flux_ring3_error",
+    "flux_ring5_value", "flux_ring5_error",
+    "flux_ring7_value", "flux_ring7_error"
+])
 
-combined_df = select(combined_df, ["flux_ring1_value", "flux_ring1_error", "flux_ring3_value", "flux_ring3_error", "flux_ring5_value", "flux_ring5_error", "flux_ring7_value", "flux_ring7_error"])
-constant = 714 # Constant to convert from RFU to GFP concentration
-
-flux_fig = plot(size=(1000, 700), left_margin=5Plots.mm, bottom_margin=5Plots.mm)
-
-for i in [1, 3, 5, 7]
-    values = combined_df[:, Symbol("flux_ring$(i)_value")] ./ constant
-    errors = combined_df[:, Symbol("flux_ring$(i)_error")] ./ constant
-    x_values = (0:length(values)-1) * 20 / 60
-    scatter!(flux_fig, x_values, values, yerr=errors, label="Flux Ring $i", markersize=6, markerstrokewidth=0.5)
+# Convert all values to µM
+for col in names(selected_df)
+    selected_df[!, col] ./= constant
 end
 
-xlabel!("Time (hours)")
-ylabel!("GFP concentration (µM)")
-title!("GFP production by microchemostat system", titlefont=font(14, "Arial"))  # Adjust font size
+# Compute average values and combined error
+num_points = nrow(selected_df)
+avg_values = Vector{Float64}(undef, num_points)
+avg_errors = Vector{Float64}(undef, num_points)
+
+for i in 1:num_points
+    vals = [selected_df[i, j] for j in (1, 3, 5, 7)]
+    errs = [selected_df[i, j] for j in (2, 4, 6, 8)]
+
+    avg_values[i] = mean(vals)
+    avg_errors[i] = sqrt(sum(e.^2 for e in errs)) / length(errs)  # RMS / N
+end
+
+# Plotting
+x_values = (0:num_points-1) * 20 / 60  # Assuming 20 min intervals
+
+flux_fig = plot(size=(1000, 700), left_margin=5Plots.mm, bottom_margin=5Plots.mm,
+                legend=false, xlabel="Time (hours)", ylabel="GFP concentration (µM)")
+
+scatter!(flux_fig, x_values, avg_values, yerr=avg_errors, markersize=6, markerstrokewidth=0.5, color=:green)
 
 gr(fmt=:png, dpi=300)
 savefig("flux_fig")

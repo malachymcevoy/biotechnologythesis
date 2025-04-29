@@ -1,0 +1,20 @@
+--- Optimization Results ---
+Algorithm: Nelder-Mead
+  Termination Status: Success
+  Optimum initial DNA concentration: 0.025563964843750002
+  Total GFP produced using this energy concentration: 210.15757028715046
+
+Algorithm: BBO
+  Termination Status: Default
+  Optimum initial DNA concentration: 0.021689380385296456
+  Total GFP produced using this energy concentration: 210.3454655465646
+
+Algorithm: L-BFGS
+  Termination Status: Success
+  Optimum initial DNA concentration: 0.025548210694994935
+  Total GFP produced using this energy concentration: 210.15761486609415
+
+Algorithm: IPNewton
+  Termination Status: Success
+  Optimum initial DNA concentration: 0.01469513144881886
+  Total GFP produced using this energy concentration: 206.9147341005133

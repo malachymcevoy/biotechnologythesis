@@ -76,7 +76,7 @@ for (i, dna) in enumerate(dna_concentrations)
     cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
     prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_flat)
-    sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
+    sol = solve(prob, RadauIIA9(), saveat=1.0, callback=cb)
     time_vals = sol.t / 60  # Convert to hours
     
     # Plot transcription energy on the first subplot
