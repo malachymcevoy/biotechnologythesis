@@ -59,17 +59,16 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
 # Solve for initial_conditions_15000
 cb_15000 = PeriodicCallback(make_discrete_dilute!(dilSpecs_15000), tau; save_positions=(false, false))
 prob_15000 = ODEProblem(model!, initial_conditions_15000, (0.0, 1000.0), params_flat)
-sol_15000 = solve(prob_15000, RadauIIA5(), saveat=1.0, callback=cb_15000)
+sol_15000 = solve(prob_15000, RadauIIA9(), saveat=1.0, callback=cb_15000)
 
 # Solve for initial_conditions_60000
 cb_60000 = PeriodicCallback(make_discrete_dilute!(dilSpecs_60000), tau; save_positions=(false, false))
 prob_60000 = ODEProblem(model!, initial_conditions_60000, (0.0, 1000.0), params_flat)
-sol_60000 = solve(prob_60000, RadauIIA5(), saveat=1.0, callback=cb_60000)
+sol_60000 = solve(prob_60000, RadauIIA9(), saveat=1.0, callback=cb_60000)
 
 time_vals = sol_15000.t / 60
 

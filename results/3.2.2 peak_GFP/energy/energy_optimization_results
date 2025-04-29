@@ -1,0 +1,20 @@
+--- Optimization Results ---
+Algorithm: Nelder-Mead
+  Termination Status: Success
+  Optimum initial energy concentration: 59999.874490547176
+  Peak GFP produced using this energy concentration: 17.846160746088962
+
+Algorithm: BBO
+  Termination Status: Default
+  Optimum initial energy concentration: 59999.99999999386
+  Peak GFP produced using this energy concentration: 17.846160963743642
+
+Algorithm: L-BFGS
+  Termination Status: Success
+  Optimum initial energy concentration: 59999.999999999876
+  Peak GFP produced using this energy concentration: 17.846160963743554
+
+Algorithm: IPNewton
+  Termination Status: Success
+  Optimum initial energy concentration: 59999.999995364145
+  Peak GFP produced using this energy concentration: 17.84616096373555
