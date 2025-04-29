@@ -1,0 +1,11 @@
+[BBO] Termination Status: Default
+[BBO] Optimum dilution interval τ: [120.0]
+[BBO] Peak GFP produced using these concentrations: 29.979913306609042
+
+[Nelder-Mead] Termination Status: Success
+[Nelder-Mead] Optimum dilution interval τ: [30.025]
+[Nelder-Mead] Peak GFP produced using these concentrations: 27.54032000349453
+
+[LBFGS] Termination Status: Success
+[LBFGS] Optimum dilution interval τ: [20.0]
+[LBFGS] Peak GFP produced using these concentrations: 17.711510571287658

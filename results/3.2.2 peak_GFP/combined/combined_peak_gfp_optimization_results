@@ -1,0 +1,17 @@
+[BBO] Termination Status: MaxIters
+[BBO] Optimum initial energy concentration: 59999.99999991404
+[BBO] Optimum initial DNA concentration: 0.0020768725449452617
+[BBO] Optimum dilution interval: 179.800000058551
+[BBO] Peak GFP produced using these concentrations: 54.776710935747126
+
+[Nelder-Mead] Termination Status: Success
+[Nelder-Mead] Optimum initial energy concentration: 82500.025
+[Nelder-Mead] Optimum initial DNA concentration: 0.012
+[Nelder-Mead] Optimum dilution interval: 100.0
+[Nelder-Mead] Peak GFP produced using these concentrations: 73.30737982826467
+
+[LBFGS] Termination Status: Success
+[LBFGS] Optimum initial energy concentration: 59999.9999999986
+[LBFGS] Optimum initial DNA concentration: 0.004073613954614594
+[LBFGS] Optimum dilution interval: 95.75000000000155
+[LBFGS] Peak GFP produced using these concentrations: 54.272539191334445
