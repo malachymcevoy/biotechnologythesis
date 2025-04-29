@@ -84,9 +84,9 @@ function calculate_GFP_at_steady_state(e0_range; required_cycles=2, tau=20.0, at
             u_now = sol.u[matched_indices[i]]
             u_next = sol.u[matched_indices[i+1]]
 
-            Δu = abs.(u_next .- u_now)
-            scale = atol .+ rtol .* abs.(u_next)
-            rel_change = maximum(Δu ./ scale)
+            ΔGm = abs(u_next[6] - u_now[6])
+            scale = atol + rtol * abs(u_next[6])
+            rel_change = ΔGm / scale
 
             if rel_change < 1.0
                 consecutive_good += 1

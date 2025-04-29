@@ -19,7 +19,7 @@ function model!(du, u, p, t)
     du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
 end
 
-function steady_state_time(x, p; required_cycles=3, atol=1e-4, rtol=1e-3)    
+function steady_state_time(x, p; required_cycles=3, atol=1e-3, rtol=1e-2)    
     f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, x[1], 9.0, 0.0, 20.0, 100.0, 7.0
 
     function make_discrete_dilute!(dilSpecs)
@@ -69,8 +69,7 @@ function steady_state_time(x, p; required_cycles=3, atol=1e-4, rtol=1e-3)
             isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
         )
 
-        sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb, 
-                   abstol=1e-6, reltol=1e-6, maxiters=1000000)
+        sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
 
         if sol.retcode != :Success
             return 1000.0  # High penalty for solver failure

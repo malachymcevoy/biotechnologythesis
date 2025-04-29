@@ -43,18 +43,18 @@ function make_discrete_dilute!(dilSpecs)
     end
 end
 
-initial_conditions = [16532.532532532532, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
+initial_conditions = [33600.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params_base = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0,
                0.0, initial_conditions[2] * 0.0,
                1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0,
                3750.0, 54.75, 105.0, 100.0]
 
-f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 80.0, 9.0, 0.0, 20.0, 100.0, 7.0
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 dilSpecs = (
     [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
-    [1, 2, 7],    [initial_conditions[1], initial_conditions[2], 1.51],    # No washout phase
-    [1, 2, 7],    [initial_conditions[1], initial_conditions[2], 1.51]
+    [1, 7],    [initial_conditions[1], 1.51],
+    [1, 7],    [initial_conditions[1], 1.51]
 )
 
 params_flat = vcat(params_base, [f_V, tau, s1, s2, tmax, tsave, nspecies])
@@ -64,11 +64,11 @@ cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(fals
 prob = ODEProblem(
     model!, 
     initial_conditions, 
-    (0.0, 2000.0), 
+    (0.0, 1000.0), 
     params_flat;
     isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
 )
-sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
+sol = solve(prob, RadauIIA9(), saveat=1.0, callback=cb)
 
 # === Plot ===
 labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
@@ -103,9 +103,9 @@ function get_steady_state_GFP(sol; tau, required_cycles=5, atol=1e-3, rtol=1e-2)
         u_now = sol.u[matched_indices[i]]
         u_next = sol.u[matched_indices[i+1]]
 
-        Δu = abs.(u_next .- u_now)
-        scale = atol .+ rtol .* abs.(u_next)
-        rel_change = maximum(Δu ./ scale)
+        ΔGm = abs(u_next[6] - u_now[6])
+        scale = atol + rtol * abs(u_next[6])
+        rel_change = ΔGm / scale
 
         println("Cycle $(i): max relative change = $(rel_change)")
 
@@ -113,7 +113,7 @@ function get_steady_state_GFP(sol; tau, required_cycles=5, atol=1e-3, rtol=1e-2)
             consecutive_good += 1
             println("✅ Change acceptable. Consecutive cycles within tolerance: $(consecutive_good).")
             if consecutive_good >= required_cycles
-                GFP_concentration = u_next[5]  # element 5 corresponds to 'G'
+                GFP_concentration = u_next[6]
                 println("🎉 Steady state detected after cycle $(i - required_cycles + 1) to cycle $(i). GFP = $(GFP_concentration)")
                 return GFP_concentration
             end

@@ -55,8 +55,8 @@ function GFP_conc_at_steady_state(x, p; required_cycles=3, atol=1e-4, rtol=1e-3)
 
     dilSpecs = (
         [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
-        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],
-        [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51]
+        [1, 7], [initial_conditions[1], 1.51],
+        [1, 7], [initial_conditions[1], 1.51]
     )
 
     params_flat = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies])
@@ -69,8 +69,7 @@ function GFP_conc_at_steady_state(x, p; required_cycles=3, atol=1e-4, rtol=1e-3)
             isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
         )
 
-        sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb, 
-                   abstol=1e-6, reltol=1e-6, maxiters=1000000)
+        sol = solve(prob, Rosenbrock23(), saveat=1.0, callback=cb)
 
         if sol.retcode != :Success
             return 1000.0  # High penalty for solver failure
@@ -93,9 +92,9 @@ function GFP_conc_at_steady_state(x, p; required_cycles=3, atol=1e-4, rtol=1e-3)
             u_now = sol.u[matched_indices[i]]
             u_next = sol.u[matched_indices[i+1]]
 
-            Δu = abs.(u_next .- u_now)
-            scale = atol .+ rtol .* abs.(u_next)
-            rel_change = maximum(Δu ./ scale)
+            ΔGm = abs(u_next[6] - u_now[6])
+            scale = atol + rtol * abs(u_next[6])
+            rel_change = ΔGm / scale
 
             if rel_change < 1.0
                 consecutive_good += 1
@@ -139,11 +138,11 @@ opt_prob2 = OptimizationProblem(opt_func, x_initial, nothing, lb=lb, ub=ub)
 opt_func_ipn = OptimizationFunction(GFP_conc_at_steady_state, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
 opt_prob_ipn = OptimizationProblem(opt_func_ipn, x_initial, nothing, lb=lb, ub=ub)
 
-#sol_NM = solve(opt_prob2, NelderMead())
-#sol_LBFGS = solve(opt_prob2, LBFGS())
-#sol_IPN = solve(opt_prob_ipn, IPNewton())
+sol_NM = solve(opt_prob2, NelderMead())
+sol_LBFGS = solve(opt_prob2, LBFGS())
+sol_IPN = solve(opt_prob_ipn, IPNewton())
 
-for (name, sol) in [("BBO", sol_BBO), ("PSO", sol_PSO)]
+for (name, sol) in [("BBO", sol_BBO), ("PSO", sol_PSO), ("NM", sol_NM), ("LBFGS", sol_LBFGS), ("IPN", sol_IPN)]
     println("[$name] Termination Status: ", sol.retcode)
 
     if !isnothing(sol.u)

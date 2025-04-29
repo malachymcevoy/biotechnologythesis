@@ -1,0 +1,63 @@
+using Optim
+using Plots
+
+# === Define the Rosenbrock Function ===
+rosenbrock(u) = (1.0 - u[1])^2 + 100.0 * (u[2] - u[1]^2)^2
+
+# === Initial Guess ===
+x0 = [-0.5, 1.0]  # Initial guess
+
+# === Run multiple optimizations with increasing max_iterations ===
+max_iterations = 20  
+all_points = [copy(x0)]  # Start with initial guess
+
+for i in 1:max_iterations
+    result = optimize(rosenbrock, x0, LBFGS(), 
+                     Optim.Options(iterations=i, store_trace=false))
+    final_point = Optim.minimizer(result)
+    push!(all_points, copy(final_point))
+end
+
+# Extract x and y coordinates
+xs = [p[1] for p in all_points]
+ys = [p[2] for p in all_points]
+
+# === Create grid for contour plot (matching gradient descent version) ===
+grid_x = range(-1.5, 1.5, length=200)  # Matching range and resolution
+grid_y = range(-0.5, 2.5, length=200)  # Matching range and resolution
+
+# Compute the Rosenbrock function values (correct orientation)
+Z = [rosenbrock([xi, yi]) for xi in grid_x, yi in grid_y]  # Note the order matches gradient descent
+
+# Create logarithmic values with identical scaling
+log_Z = log10.(Z .+ 1e-10)  # Same offset as gradient descent
+
+# Calculate identical levels for contours
+min_z = minimum(log_Z)
+max_z = maximum(log_Z)
+levels = range(min_z, max_z, length=20)  # Same number of levels
+
+# === Generate GIF with identical visual style ===
+anim = @animate for i in 1:length(xs)
+    # Create contour plot with identical parameters
+    p = contour(grid_x, grid_y, log_Z',
+         xlabel="x", ylabel="y", 
+         levels=levels,
+         linewidth=1.5, 
+         c=:viridis,
+         aspect_ratio = :equal,
+         clims=(min_z, max_z),
+         title="LBFGS Optimization of Rosenbrock Function\nIteration $i",
+         xlims=(-1.5, 1.5), ylims=(-0.5, 2.5))  # Same limits
+    
+    # Plot the optimization path with identical style
+    plot!(xs[1:i], ys[1:i], color=:red, linewidth=2, label="Path")
+    scatter!([xs[i]], [ys[i]], color=:red, label="Current Position", ms=5)
+    
+    # Mark the global minimum with identical style
+    scatter!([1.0], [1.0], color=:green, marker=:star,
+            markersize=8, label="Global Minimum")
+end every 1
+
+# Save the animation
+gif(anim, "rosenbrock_lbfgs_matched.gif", fps=5)

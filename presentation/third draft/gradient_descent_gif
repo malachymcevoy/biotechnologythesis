@@ -1,0 +1,81 @@
+using Plots
+
+function gradient_descent_rosenbrock()
+    # === Define the Rosenbrock Function ===
+    rosenbrock(u) = (1.0 - u[1])^2 + 100.0 * (u[2] - u[1]^2)^2
+    
+    # === Define the gradient of Rosenbrock Function ===
+    function rosenbrock_gradient(u)
+        g1 = -2.0 * (1.0 - u[1]) - 400.0 * u[1] * (u[2] - u[1]^2)
+        g2 = 200.0 * (u[2] - u[1]^2)
+        return [g1, g2]
+    end
+    
+    # === Initialize ===
+    x0 = [-0.5, 1.0]  # Initial guess
+    learning_rate = 0.001
+    iterations = 1000
+    
+    # === Run Gradient Descent ===
+    all_points = [copy(x0)]  # Start with initial guess
+    current_point = copy(x0)
+    
+    for i in 1:iterations
+        # Compute gradient
+        grad = rosenbrock_gradient(current_point)
+        # Update parameters
+        current_point = current_point - learning_rate * grad
+        # Store the current position
+        push!(all_points, copy(current_point))
+    end
+    
+    # Extract x and y coordinates
+    xs = [p[1] for p in all_points]
+    ys = [p[2] for p in all_points]
+    
+    # === Create a grid for contour plot ===
+    grid_x = range(-1.5, 1.5, length=200)  # Expanded range
+    grid_y = range(-0.5, 2.5, length=200)  # Expanded range
+    
+    # Compute the Rosenbrock function values
+    Z = [rosenbrock([xi, yi]) for xi in grid_x, yi in grid_y]
+    
+    # Create logarithmic values with better scaling
+    log_Z = log10.(Z .+ 1e-10)  # Smaller offset to better capture the minimum
+    
+    # Calculate appropriate levels for contours
+    min_z = minimum(log_Z)
+    max_z = maximum(log_Z)
+    levels = range(min_z, max_z, length=20)
+    
+    # === Generate GIF of Gradient Descent Optimization Path ===
+    anim = @animate for i in 1:length(xs)
+        # Only animate every 5 iterations to keep file size reasonable
+        if i % 5 == 0 || i == 1 || i == length(xs)
+            # Create contour plot with explicit levels
+            p = contour(grid_x, grid_y, log_Z',
+                xlabel="x", ylabel="y", 
+                levels=levels,
+                linewidth=1.5, 
+                c=:viridis,
+                aspect_ratio = :equal,
+                clims=(min_z, max_z),  # Consistent color range
+                title="Gradient Descent on Rosenbrock Function\nIteration $i",
+                xlims=(-1.5, 1.5), ylims=(-0.5, 2.5))  # Explicit limits
+            
+            # Plot the optimization path so far
+            plot!(xs[1:i], ys[1:i], color=:red, linewidth=2, label="Path")
+            scatter!([xs[i]], [ys[i]], color=:red, label="Current Position", ms=5)
+            
+            # Mark the global minimum at (1,1)
+            scatter!([1.0], [1.0], color=:green, marker=:star, 
+                    markersize=8, label="Global Minimum")
+        end
+    end every 1
+    
+    # Save the animation as a GIF
+    gif(anim, "rosenbrock_gradient_descent.gif", fps=10)
+end
+
+# Call the function to create the GIF
+gradient_descent_rosenbrock()
