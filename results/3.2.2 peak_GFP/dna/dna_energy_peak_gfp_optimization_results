@@ -1,0 +1,19 @@
+[BBO] Termination Status: MaxIters
+[BBO] Optimum initial energy concentration: 59999.99999999999
+[BBO] Optimum initial DNA concentration: 0.015610859915660202
+[BBO] Max GFP produced using these concentrations: 47.00983566154549
+
+[Nelder-Mead] Termination Status: Success
+[Nelder-Mead] Optimum initial energy concentration: 75000.025
+[Nelder-Mead] Optimum initial DNA concentration: 0.02
+[Nelder-Mead] Max GFP produced using these concentrations: 56.91214671708296
+
+[LBFGS] Termination Status: Success
+[LBFGS] Optimum initial energy concentration: 59999.999999995154
+[LBFGS] Optimum initial DNA concentration: 0.01509200598652582
+[LBFGS] Max GFP produced using these concentrations: 46.99834114715438
+
+[IPNewton] Termination Status: Success
+[IPNewton] Optimum initial energy concentration: 60000.0
+[IPNewton] Optimum initial DNA concentration: 0.015610846580455588
+[IPNewton] Max GFP produced using these concentrations: 47.00983566124716
