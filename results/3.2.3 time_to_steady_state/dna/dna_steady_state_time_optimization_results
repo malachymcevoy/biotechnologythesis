@@ -1,0 +1,6 @@
+=== Final Optimization Results ===
+BBO: D0=0.05326254684693776, time to steady state=2.3333333333333335 hours
+PSO: D0=0.05264647212780477, time to steady state=2.3333333333333335 hours
+Nelder-Mead: D0=0.07, time to steady state=2.6666666666666665 hours
+LBFGS: D0=0.01, time to steady state=5.666666666666667 hours
+IPNewton: D0=0.01, time to steady state=5.666666666666667 hours

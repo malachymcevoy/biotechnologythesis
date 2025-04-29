@@ -74,7 +74,7 @@ function steady_state_time(D0_arr, p; required_cycles=3, atol=1e-4, rtol=1e-3)
             isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
         )
 
-        sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb, 
+        sol = solve(prob, RadauIIA9(), saveat=1.0, callback=cb, 
                    abstol=1e-6, reltol=1e-6, maxiters=1000000)
 
         if sol.retcode != :Success

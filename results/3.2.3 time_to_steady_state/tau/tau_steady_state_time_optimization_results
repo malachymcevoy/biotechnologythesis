@@ -1,0 +1,6 @@
+=== Final Optimization Results ===
+BBO: tau=5.0, time to steady state=1.75 hours
+PSO: tau=5.0, time to steady state=1.75 hours
+Nelder-Mead: tau=20.0, time to steady state=6.0 hours
+LBFGS: tau=20.0, time to steady state=6.0 hours
+IPNewton: tau=20.0, time to steady state=6.0 hours
