@@ -1,0 +1,6 @@
+=== Final Optimization Results ===
+BBO: D0=0.008118177000297362, GFP concentration at steady state=26.189175713832043 µM
+PSO: D0=0.008118177000173385, GFP concentration at steady state=26.18917571380698 µM
+Nelder-Mead: D0=0.008118177609080046, GFP concentration at steady state=26.189175696384687 µM
+LBFGS: D0=0.008235883691189159, GFP concentration at steady state=26.164887215932257 µM
+IPNewton: D0=0.008174622907132738, GFP concentration at steady state=26.15128891984484 µM

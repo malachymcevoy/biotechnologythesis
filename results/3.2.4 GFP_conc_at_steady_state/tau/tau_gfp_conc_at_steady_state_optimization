@@ -69,7 +69,7 @@ function GFP_conc_at_steady_state(x, p; required_cycles=3, atol=1e-4, rtol=1e-3)
             isoutofdomain = (u, p, t) -> any(x -> x < 0.0, u)
         )
 
-        sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb, 
+        sol = solve(prob, RadauIIA9(), saveat=1.0, callback=cb, 
                    abstol=1e-6, reltol=1e-6, maxiters=1000000)
 
         if sol.retcode != :Success
@@ -128,7 +128,8 @@ sol_PSO = solve(opt_prob, ParticleSwarm(n_particles=50), maxiters=100)
 opt_func = OptimizationFunction(GFP_conc_at_steady_state, Optimization.AutoForwardDiff())
 opt_prob2 = OptimizationProblem(opt_func, tau_initial, nothing, lb=lb, ub=ub)
 
-opt_func_ipn = OptimizationFunction(steady_state_time, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
+opt_func_ipn = OptimizationFunction(GFP_conc_at_steady_state
+, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
 opt_prob_ipn = OptimizationProblem(opt_func_ipn, tau_initial, nothing, lb=lb, ub=ub)
 
 sol_NM = solve(opt_prob2, NelderMead())

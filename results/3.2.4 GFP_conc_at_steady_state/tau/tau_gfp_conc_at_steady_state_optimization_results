@@ -1,0 +1,6 @@
+=== Final Optimization Results ===
+BBO: tau=47.84961664642383, GFP concentration at steady state=22.54327023851392 hours
+PSO: tau=47.85845645912113, GFP concentration at steady state=22.543270320953837 hours
+Nelder-Mead: tau=30.025, GFP concentration at steady state=22.03261831270241 hours
+LBFGS: tau=20.0, GFP concentration at steady state=17.723132912824134 hours
+IPNewton: tau=20.0, GFP concentration at steady state=17.723132912824134 hours

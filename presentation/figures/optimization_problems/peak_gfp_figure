@@ -1,6 +1,5 @@
 using DifferentialEquations, DiffEqCallbacks, Plots
 
-
 function model!(du, u, p, t)
     qx, ng, ql, nG, ein, mu, Din, kb, ku, kd, km, Rin, ktx, Ktx, ktl, Ktl = p
     e, D, m, cl, G, Gm, R = u
@@ -20,7 +19,7 @@ end
 initial_conditions = [15000.0, 0.005, 0.0, 0.0, 0.0, 0.0, 1.51]
 params = [2.0, 833.0, 4.0, 236.0, initial_conditions[1] * 0.0, 0.0, initial_conditions[2] * 0.0,
           1000.0, 1.0, 0.038153465, 0.084, 1.51 * 0.0, 3750.0, 54.75, 105.0, 100.0]
-f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 15.0, 9.0, 0.0, 20.0, 100.0, 7.0
+f_V, tau, s1, s2, tmax, tsave, nspecies = 0.2, 20.0, 9.0, 0.0, 20.0, 100.0, 7.0
 
 dilSpecs = (
             [1, 2, 7], [initial_conditions[1], initial_conditions[2], 1.51],    # DISC_A
@@ -53,33 +52,50 @@ end
 cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
 prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_flat)
-sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
+sol = solve(prob, RadauIIA9(), saveat=1.0, callback=cb)
 
 labels = ["e", "D", "m", "cl", "G", "Gm", "R"]
 time_vals = sol.t / 60
 
+# Identify peak GFP (Gm) value and time
+gfp_values = sol[6, :]
+peak_idx = argmax(gfp_values)
+peak_time = time_vals[peak_idx]
+peak_value = gfp_values[peak_idx]
+
 ODEfig = plot(size=(1000, 700), 
               left_margin=5Plots.mm,
-              bottom_margin=5Plots.mm)
+              bottom_margin=5Plots.mm,
+              guidefont=font(24),
+              tickfont=font(18),
+              titlefont=font(26),
+              legendfont=font(20))
+
+# Plot Gm over time
 plot!(
     ODEfig,
     time_vals,
-    sol[6, :],
+    gfp_values,
     linecolor=:green,
     linewidth=2,
-    legend=false
+    legend=true,
+    label="GFP concentration"
 )
 
-plot!(
+# Dot at peak GFP
+scatter!(
     ODEfig,
-    time_vals,
-    sol[6, :],
-    fill=(0, :yellow),
-    linecolor=:transparent,
-    alpha=0.3
+    [peak_time], [peak_value],
+    markercolor=:orange,
+    markerstrokecolor=:red,
+    markershape=:circle,
+    markersize=10,
+    label="Peak GFP concentration"
 )
 
 xlabel!("Time (hours)")
 ylabel!("GFP concentration (µM)")
+title!("Optimization of Peak GFP Concentration")
+plot!(legend=:bottom)
 
-savefig("total_gfp_figure.png")
+savefig("peak_gfp_figure.png")
