@@ -63,7 +63,7 @@ ODEfig = plot(size=(1000, 700),
               bottom_margin=5Plots.mm,
               guidefont=font(24),
               tickfont=font(18),
-              titlefont=font(26),
+              titlefont=font(30),
               legendfont=font(20))
 plot!(
     ODEfig,
