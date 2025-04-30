@@ -1,0 +1,29 @@
+[BBO] Termination Status: MaxIters
+[BBO] Optimum initial energy concentration: 59999.97986107599
+[BBO] Optimum initial DNA concentration: 0.007455286067953844
+[BBO] Optimum dilution interval: 35.99997477372881
+[BBO] GFP concentration at steady state: 40.29415375918356
+
+[PSO] Termination Status: Failure
+[PSO] Optimum initial energy concentration: 60000.0
+[PSO] Optimum initial DNA concentration: 0.007608913994585881
+[PSO] Optimum dilution interval: 35.97484084613209
+[PSO] GFP concentration at steady state: 40.27650122723608
+
+[NM] Termination Status: Success
+[NM] Optimum initial energy concentration: 75000.025
+[NM] Optimum initial DNA concentration: 0.01
+[NM] Optimum dilution interval: 20.0
+[NM] GFP concentration at steady state: -1.0e6
+
+[LBFGS] Termination Status: Success
+[LBFGS] Optimum initial energy concentration: 50000.0
+[LBFGS] Optimum initial DNA concentration: 0.01
+[LBFGS] Optimum dilution interval: 20.0
+[LBFGS] GFP concentration at steady state: -1.0e6
+
+[IPN] Termination Status: Success
+[IPN] Optimum initial energy concentration: 50000.0
+[IPN] Optimum initial DNA concentration: 0.01
+[IPN] Optimum dilution interval: 20.0
+[IPN] GFP concentration at steady state: -1.0e6
