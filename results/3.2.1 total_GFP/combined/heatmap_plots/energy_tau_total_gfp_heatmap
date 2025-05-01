@@ -76,7 +76,7 @@ for (i, e0) in enumerate(energy_vals)
         cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
         prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_flat)
-        sol = solve(prob, RadauIIA5(), saveat=1.0, callback=cb)
+        sol = solve(prob, RadauIIA9(), saveat=1.0, callback=cb)
 
         total_gfp_production = 0.0
         for k in 2:length(sol.t)
