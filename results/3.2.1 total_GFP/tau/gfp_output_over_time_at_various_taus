@@ -75,7 +75,7 @@ s1, s2, tmax, tsave, nspecies = 9.0, 0.0, 20.0, 100.0, 7
 tau_values = [10, 20, 30, 80]
 
 # === Plot GFP at various taus ===
-GFP_plot = plot(size=(800, 500))
+GFP_plot = plot(size=(600, 500))
 for tau in tau_values
     dilution_times = [n * tau for n in 1:floor(Int, 2000.0 / tau) if n * tau <= 2000.0] # Number of dilutions
     pre_washout_dilutions = filter(t -> t < s1 * 60, dilution_times) # Number of dilutions before the washout phase begins
