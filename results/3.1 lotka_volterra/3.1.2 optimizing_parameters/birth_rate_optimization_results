@@ -1,0 +1,11 @@
+Prey Optimization Results:
+BBO algorithm: Optimal α = 2.998647174768169, Peak Prey Population = 2.1996599829515002
+NelderMead: Optimal α = 1.525, Peak Prey Population = 1.308559718662894
+LBFGS: Optimal α = 2.9999999988922017, Peak Prey Population = 2.1934966404197698
+IPNewton: Optimal α = 1.0003363390852964, Peak Prey Population = 1.0875867216532775
+
+Predator Optimization Results:
+BBO_adaptive_de_rand_1_bin_radiuslimited: Optimal δ = 0.05118877959650777, Peak Predator Population = 15.370413300921404
+NelderMead: Optimal δ = 0.05127334594726579, Peak Predator Population = 14.294762598380482
+LBFGS: Optimal δ = 1.0338086479941906, Peak Predator Population = 2.729080122897782
+IPNewton: Optimal δ = 0.9999999439258408, Peak Predator Population = 2.72374663767691

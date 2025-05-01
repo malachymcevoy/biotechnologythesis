@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.4
+# v0.20.6
 
 using Markdown
 using InteractiveUtils
@@ -7,7 +7,7 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     #! format: off
-    quote
+    return quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
@@ -72,7 +72,7 @@ begin
 	α = @bind α Slider(0.0:0.01:2.0, default = 0.5, show_value=true)
 	β = @bind β Slider(0.1:0.01:1.0, default = 1.0, show_value=true)
 	γ = @bind γ Slider(0.1:0.01:3.0, default = 3.0, show_value=true)
-	δ = @bind δ Slider(0.1:0.01:2.0, default = 1.0, show_value=true)
+	δ = @bind δ Slider(0.1:0.01:3.0, default = 1.0, show_value=true)
 	prey_init = @bind prey_init Slider(1:1:50, default=1, show_value=true)
 	predator_init = @bind predator_init Slider(1:1:50, default=1, show_value=true)
 	
@@ -2807,7 +2807,7 @@ version = "1.4.1+2"
 # ╠═17aa8d2f-85cb-4840-aa1d-78497179692c
 # ╟─bc44fe5f-0873-49f6-96e1-f6a425c31fdd
 # ╠═071fdad1-0c47-42e7-b97d-795f4c4aa641
-# ╠═448b6e32-e745-4f18-bba1-32fb9ece8b06
+# ╟─448b6e32-e745-4f18-bba1-32fb9ece8b06
 # ╟─cb96545b-cbb8-4e74-a73a-0bc826e9c5ae
 # ╟─7b9e1a27-a0a8-4d5e-9a44-fb5c412da813
 # ╟─a186903a-c124-4c78-b094-831987b6c92b

@@ -69,9 +69,9 @@ function f(u,p)
 end
 
 # define parameters
-p_δ = [0.5, 1.0, 3.0, 5.0, 5.0] # α, β, γ, prey_init, pred_init
+p_δ = [0.5, 1.0, 3.0, 1.0, 1.0] # α, β, γ, prey_init, pred_init
 u0_δ = [1.0]
-lb_δ = [0.0]
+lb_δ = [0.05]
 ub_δ = [3.0]
 
 opt_func_δ = OptimizationFunction(f, AutoZygote())

@@ -38,7 +38,7 @@ end
 
 # === Parameter Sets ===
 p_α = [0.5, 1.0, 3.0, 1.0, 1.0]   # β, γ, δ, x0, y0
-p_δ = [0.5, 1.0, 3.0, 5.0, 5.0]   # α, β, γ, x0, y0
+p_δ = [0.5, 1.0, 3.0, 1.0, 1.0]   # α, β, γ, x0, y0
 
 # === Evaluation Helpers ===
 function evaluate_objective(func, p, param_range)
