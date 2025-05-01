@@ -1,0 +1,9 @@
+=== Optimization Results Summary ===
+Algorithm           Iterations     Time (seconds) Final Objective     
+----------------------------------------------------------------------
+Gradient Descent    54             1.245419       0.000000
+LBFGS               27             0.036497       0.000000
+Newton              29             0.353228       0.000000
+IPNewton            59             3.117852       0.000000
+BBO                 10001          0.241967       0.000000
+Nelder-Mead         79             0.020059       0.000000

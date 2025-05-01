@@ -1,9 +1,8 @@
-using OptimizationBBO, OptimizationOptimJL, ForwardDiff, Zygote, Printf
+using OptimizationBBO, OptimizationOptimJL, ForwardDiff, Zygote, Printf, BenchmarkTools
 
 rosenbrock(u, p) = (p[1] - u[1])^2 + p[2] * (u[2] - u[1]^2)^2 # rosenbrock equation
 p = [1.0, 100.0] # a and b values
 x0 = [5.0, 5.0] # Initial guesses
-
 lb = [-10, -10]
 ub = [100, 100]
 
@@ -19,46 +18,53 @@ function get_objective(result)
     result.minimum
 end
 
+function run_with_timing(solver_func)
+    start_time = time()
+    result = solver_func()
+    end_time = time()
+    return result, end_time - start_time
+end
+
 # === Gradient-based algorithms ===
 opt_func_steepest = OptimizationFunction(rosenbrock, AutoZygote())
 opt_prob_steepest = OptimizationProblem(opt_func_steepest, x0, p; lb, ub)
-steepest_results = solve(opt_prob_steepest, GradientDescent())
+steepest_results, steepest_time = run_with_timing(() -> solve(opt_prob_steepest, GradientDescent()))
 
 opt_func_lbfgs = OptimizationFunction(rosenbrock, AutoZygote())
 opt_prob_lbfgs = OptimizationProblem(opt_func_lbfgs, x0, p)
-lbfgs_results = solve(opt_prob_lbfgs, LBFGS())
+lbfgs_results, lbfgs_time = run_with_timing(() -> solve(opt_prob_lbfgs, LBFGS()))
 
 opt_func_newton = OptimizationFunction(rosenbrock, AutoForwardDiff())
 opt_prob_newton = OptimizationProblem(opt_func_newton, x0, p)
-newton_result = solve(opt_prob_newton, Newton())
+newton_result, newton_time = run_with_timing(() -> solve(opt_prob_newton, Newton()))
 
 cons = (res, x, p) -> res .= [x[1]^2 + x[2]^2]
 opt_func_ipn = OptimizationFunction(rosenbrock, AutoForwardDiff(); cons = cons)
 opt_prob_ipn = OptimizationProblem(opt_func_ipn, x0, p; lcons = [-Inf], ucons = [Inf])
-ipn_result = solve(opt_prob_ipn, IPNewton())
+ipn_result, ipn_time = run_with_timing(() -> solve(opt_prob_ipn, IPNewton()))
 
 # === Gradient-free algorithms ===
 opt_prob_bbo = OptimizationProblem(rosenbrock, x0, p; lb, ub)
-bbo_results = solve(opt_prob_bbo, BBO_adaptive_de_rand_1_bin_radiuslimited())
+bbo_results, bbo_time = run_with_timing(() -> solve(opt_prob_bbo, BBO_adaptive_de_rand_1_bin_radiuslimited()))
 
 opt_prob_nm = OptimizationProblem(rosenbrock, x0, p)
-nm_results = solve(opt_prob_nm, NelderMead())
+nm_results, nm_time = run_with_timing(() -> solve(opt_prob_nm, NelderMead()))
 
 # === Summary ===
 println("\n=== Optimization Results Summary ===")
 results = [
-    ("Gradient Descent", steepest_results),
-    ("LBFGS", lbfgs_results),
-    ("Newton", newton_result),
-    ("IPNewton", ipn_result),
-    ("BBO", bbo_results),
-    ("Nelder-Mead", nm_results)
+    ("Gradient Descent", steepest_results, steepest_time),
+    ("LBFGS", lbfgs_results, lbfgs_time),
+    ("Newton", newton_result, newton_time),
+    ("IPNewton", ipn_result, ipn_time),
+    ("BBO", bbo_results, bbo_time),
+    ("Nelder-Mead", nm_results, nm_time)
 ]
 
-println(rpad("Algorithm", 20), rpad("Iterations", 15), rpad("Final Objective", 20))
-println("-"^55)
-for (name, res) in results
+println(rpad("Algorithm", 20), rpad("Iterations", 15), rpad("Time (seconds)", 15), rpad("Final Objective", 20))
+println("-"^70)
+for (name, res, time_taken) in results
     iters = get_iterations(res)
     obj = get_objective(res)
-    println(rpad(name, 20), rpad(string(iters), 15), @sprintf("%.6f", obj))
+    println(rpad(name, 20), rpad(string(iters), 15), rpad(@sprintf("%.6f", time_taken), 15), @sprintf("%.6f", obj))
 end
