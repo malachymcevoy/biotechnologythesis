@@ -95,7 +95,7 @@ for tau in tau_values
     cb = PeriodicCallback(make_discrete_dilute!(dilSpecs), tau; save_positions=(false, false))
 
     prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_with_dilution)
-    sol = solve(prob, RadauIIA5(), callback=cb, saveat=1.0)
+    sol = solve(prob, RadauIIA9(), callback=cb, saveat=1.0)
 
     time_vals = sol.t ./ 60
     plot!(GFP_plot, time_vals, sol[6, :], label="τ = $(tau)min", lw=2)

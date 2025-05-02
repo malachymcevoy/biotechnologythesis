@@ -93,7 +93,7 @@ for tau in tau_values
     cb = CallbackSet(periodcb)
 
     prob = ODEProblem(model!, initial_conditions, (0.0, 2000.0), params_with_dilution)
-    sol = solve(prob, Tsit5(), callback=periodcb, saveat=1.0)
+    sol = solve(prob, RadauIIA9(), callback=periodcb, saveat=1.0)
 
     time_vals = sol.t / 60
     plot!(energy_plot, time_vals, sol[1, :], label="τ = $tau")
@@ -109,7 +109,7 @@ for tau in tau_values
     params_with_dilution = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies, dilSpecs])
     periodcb = PeriodicCallback(discreteDilute!, tau; save_positions=(false,false))
     prob = ODEProblem(model!, initial_conditions, (0.0, 2000.0), params_with_dilution)
-    sol = solve(prob, Tsit5(), callback=periodcb, saveat=1.0)
+    sol = solve(prob, RadauIIA9(), callback=periodcb, saveat=1.0)
     time_vals = sol.t / 60
     plot!(energy_plot, time_vals, sol[1, :], label="τ = $tau")
 end
