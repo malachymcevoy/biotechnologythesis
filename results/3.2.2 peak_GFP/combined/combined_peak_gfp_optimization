@@ -64,7 +64,7 @@ function optimizer(x, p)
 end
 
 x_initial = [100.0, 55000.0, 0.012]
-lb, ub = [10.0, 1000.0, 0.001], [180.0, 60000.0, 0.1]
+lb, ub = [10.0, 1000.0, 0.001], [120.0, 60000.0, 0.1]
 
 opt_func_ipn = OptimizationFunction(optimizer, SecondOrder(AutoForwardDiff(), AutoForwardDiff()))
 opt_prob_ipn = OptimizationProblem(opt_func_ipn, x_initial; lb=lb, ub=ub)
