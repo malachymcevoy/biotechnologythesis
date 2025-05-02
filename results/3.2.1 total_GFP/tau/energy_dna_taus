@@ -103,25 +103,31 @@ xlabel!("Time (hours)")
 ylabel!("Energy Concentration (μM)")
 
 
-# Create the plot for DNA (D output) at different tau values
-DNA_plot = plot()
+# Create the plot for energy change (e output) at different tau values
+energy_plot = plot(size=(600,500))
 for tau in tau_values
     params_with_dilution = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies, dilSpecs])
-
     periodcb = PeriodicCallback(discreteDilute!, tau; save_positions=(false,false))
-    cb = CallbackSet(periodcb)
-    
+    prob = ODEProblem(model!, initial_conditions, (0.0, 2000.0), params_with_dilution)
+    sol = solve(prob, Tsit5(), callback=periodcb, saveat=1.0)
+    time_vals = sol.t / 60
+    plot!(energy_plot, time_vals, sol[1, :], label="τ = $tau")
+end
+xlabel!(energy_plot, "Time (hours)")
+ylabel!(energy_plot, "Energy Concentration (μM)")
+savefig(energy_plot, "energy_vs_tau.png")
+
+
+# Create the plot for DNA (D output) at different tau values
+DNA_plot = plot(size=(600,500))
+for tau in tau_values
+    params_with_dilution = vcat(params, [f_V, tau, s1, s2, tmax, tsave, nspecies, dilSpecs])
+    periodcb = PeriodicCallback(discreteDilute!, tau; save_positions=(false,false))
     prob = ODEProblem(model!, initial_conditions, (0.0, 1000.0), params_with_dilution)
     sol = solve(prob, Tsit5(), callback=periodcb, saveat=1.0)
-
     time_vals = sol.t / 60
     plot!(DNA_plot, time_vals, sol[2, :], label="τ = $tau")
 end
-
-xlabel!("Time (hours)")
-ylabel!("DNA Concentration (μM)")
-
-
-# Combine and save plots
-combined_plot = plot(energy_plot, DNA_plot, layout=(1, 2), dpi=300)
-savefig(combined_plot, "energy_dna_taus.png")
+xlabel!(DNA_plot, "Time (hours)")
+ylabel!(DNA_plot, "DNA Concentration (μM)")
+savefig(DNA_plot, "dna_vs_tau.png")
