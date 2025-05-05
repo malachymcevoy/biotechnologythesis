@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.7
+# v0.20.6
 
 using Markdown
 using InteractiveUtils
@@ -57,13 +57,24 @@ md"Define x and y ranges"
 # ╔═╡ 5b8e3f43-d798-4178-b1a1-e6a6f1da7d99
 begin
 	x_range = range(-2, 2, length=100)
-	y_range = range(-1, 3, length=100)
+	y_range = range(-2, 2, length=100)
 end
 
 # ╔═╡ 2538aa2c-b133-42ba-ba3b-8d782267808d
 begin
 	Z = [rosenbrock([x, y], p) for x in x_range, y in y_range]
-	Plots.contour(x_range, y_range, transpose(Z), levels=50, color=:thermal, xlabel="x", ylabel="y", title="Rosenbrock Function")
+
+	# Plot contour
+	contour(
+	    x_range, y_range, transpose(Z),
+	    levels = 100,                 
+	    color = :thermal,       
+	    linewidth = 0.8,      
+	    xlabel = "x", ylabel = "y",
+	)
+	
+	# Annotate the known global minimum
+	scatter!([1.0], [1.0], markersize=4, markercolor=:red, label="Global minimum at (1,1)")
 end
 
 # ╔═╡ 07be6a36-2163-44c5-ab5d-88ae41481a7c
@@ -79,9 +90,15 @@ begin
 	min_x, min_y = 1.0, 1.0
 	min_value = rosenbrock([min_x, min_y], [1,100])
 
-	surface(
+	plt_surface = surface(
 		x, y, z, 
-		xlabel="x", ylabel="y", zlabel="f(x, y)")
+		xlabel="x", ylabel="y", zlabel="f(x, y)",    
+		camera = (60, 30),
+		contour=true, c = :thermal)                
+	
+	scatter!([min_x], [min_y], [min_value],
+    markersize = 6, markercolor = :red,
+    label = "Global Minimum at (1,1)")
 end
 
 # ╔═╡ 7d74f34a-d85d-4409-98f2-ae2305d09a7f
@@ -2523,7 +2540,7 @@ version = "1.4.1+2"
 # ╠═9308d2e8-e19d-49d9-a324-be36c6843e10
 # ╟─0a33ffc9-5eb3-4ca8-80ee-7dbf90113d21
 # ╟─9e6c1762-df67-44ad-b9c2-cef71876f269
-# ╟─a0cadcca-2103-49e0-9ea5-3f630b57fa3f
+# ╠═a0cadcca-2103-49e0-9ea5-3f630b57fa3f
 # ╟─5b8e3f43-d798-4178-b1a1-e6a6f1da7d99
 # ╟─2538aa2c-b133-42ba-ba3b-8d782267808d
 # ╟─07be6a36-2163-44c5-ab5d-88ae41481a7c
