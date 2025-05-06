@@ -87,7 +87,7 @@ for (i, dna) in enumerate(dna_concentrations)
 end
 
 # Display the plots side by side with wider layout and adjusted margins
-plot(p1, p2, layout=(1, 2), size=(1600, 600), left_margin=30Plots.px, right_margin=20Plots.px, top_margin=20Plots.px, bottom_margin=20Plots.px, legendfontsize=12, guidefontsize=12, titlefontsize=16)
+plot(p1, p2, layout=(1, 2), size=(1600, 600), left_margin=40Plots.px, right_margin=20Plots.px, top_margin=20Plots.px, bottom_margin=30Plots.px, legendfontsize=14, guidefontsize=14)
 
 # Save the figure
 savefig("translation_transcription.png")

@@ -88,7 +88,7 @@ tau_at_max_gfp = tau_range[max_index]
 println("Optimal dilution interval (τ): ", tau_at_max_gfp, " minutes")
 println("Maximum total GFP produced: ", max_total_gfp)
 
-plot(tau_range, total_Gm_values, xlabel="Dilution Interval (mins)", ylabel="Total GFP Production (µM)", lw=2, legend=false, size=(600,500))
+plot(tau_range, total_Gm_values, xlabel="Dilution Interval (mins)", ylabel="Total GFP Production (µM)", lw=2, legend=false, size=(600,500), xguidefontsize=14, yguidefontsize=14)
 
 scatter!([tau_at_max_gfp], [max_total_gfp], label="Max", marker=:star5, color=:red)
 
