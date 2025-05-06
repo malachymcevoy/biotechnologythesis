@@ -78,8 +78,8 @@ f = Figure(resolution=(900, 650))
 ax = Axis(f[1, 1],
     xlabel="Dilution interval (min)",
     ylabel="Energy Concentration (μM)",
-    xlabelsize=18, ylabelsize=18, 
-    xticklabelsize=15, yticklabelsize=15,
+    xlabelsize=22, ylabelsize=22, 
+    xticklabelsize=18, yticklabelsize=18,
 )
 
 hm = heatmap!(ax, tau_vals, energy_vals, peak_Gm_values'; colormap=:viridis)
@@ -90,7 +90,7 @@ contour!(ax, tau_vals, energy_vals, peak_Gm_values,
          linewidth=1.5,
          color=:white)
 
-scatter!(ax, [opt_tau], [opt_energy], color=:red, markersize=15, marker=:star5)
+scatter!(ax, [opt_tau], [opt_energy], color=:red, markersize=20, marker=:star5)
 text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", 
       position=(opt_tau - 32.5, opt_energy - 2000), # Shifted down by 2000 units
       align=(:left, :center), 

@@ -104,7 +104,7 @@ f = Figure(resolution=(800, 600))
 ax = Axis(f[1, 1], 
     xlabel="Dilution interval (mins)", 
     ylabel="Energy Concentration (μM)",
-    xlabelsize=18, ylabelsize=18, xticklabelsize=15, yticklabelsize=15
+    xlabelsize=22, ylabelsize=22, xticklabelsize=18, yticklabelsize=18
 )
 
 hm = heatmap!(ax, tau_vals, energy_vals, total_Gm_values; colormap=:viridis)
@@ -115,12 +115,12 @@ contour!(ax, tau_vals, energy_vals, total_Gm_values,
          linewidth=1.5,
          color=:white)
 
-scatter!(ax, [opt_tau], [opt_energy], color=:red, markersize=12, marker=:star5)
+scatter!(ax, [opt_tau], [opt_energy], color=:red, markersize=20, marker=:star5)
 text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", 
       position=(opt_tau + 1, opt_energy - 3000), 
       align=(:left, :bottom), fontsize=18, color=:red)
 
-Colorbar(f[1, 2], hm, label="Total GFP Production (μM)", labelsize=18, ticklabelsize=15)
+Colorbar(f[1, 2], hm, label="Total GFP Production (μM)", labelsize=22, ticklabelsize=18)
 
 display(f)
 CairoMakie.save("energy_tau_total_gfp_heatmap.png", f)

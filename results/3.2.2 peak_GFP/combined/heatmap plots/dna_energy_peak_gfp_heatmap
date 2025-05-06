@@ -80,8 +80,8 @@ f = Figure(resolution=(900, 650))
 ax = Axis(f[1, 1],
     xlabel="DNA Concentration (μM)",
     ylabel="Energy Concentration (μM)",
-    xlabelsize=18, ylabelsize=18, 
-    xticklabelsize=15, yticklabelsize=15,
+    xlabelsize=22, ylabelsize=22, 
+    xticklabelsize=18, yticklabelsize=18,
 )
 
 hm = heatmap!(ax, dna_vals, energy_vals, peak_Gm_values; colormap=:viridis)
@@ -93,7 +93,7 @@ contour!(ax, dna_vals, energy_vals, peak_Gm_values,
          color=:white)
 
 
-scatter!(ax, [opt_dna], [opt_energy], color=:red, markersize=15, marker=:star5)
+scatter!(ax, [opt_dna], [opt_energy], color=:red, markersize=20, marker=:star5)
 text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM", 
       position=(opt_dna + 0.0005, opt_energy - 2000),
       align=(:left, :center), 
@@ -103,8 +103,8 @@ text!(ax, "Max GFP: $(round(opt_gfp, digits=2)) μM",
 
 Colorbar(f[1, 2], hm, 
          label="Peak GFP Concentration (μM)", 
-         labelsize=18, 
-         ticklabelsize=15)
+         labelsize=22, 
+         ticklabelsize=18)
 
 display(f)
 CairoMakie.save("dna_energy_peak_gfp_heatmap.png", f)
