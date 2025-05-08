@@ -93,9 +93,9 @@ for (i, color) in zip([5000.0, 10000.0, 24000.0, 60000.0], colors)
             u_now = sol.u[matched_indices[i]]
             u_next = sol.u[matched_indices[i+1]]
 
-            Δu = abs.(u_next .- u_now)
-            scale = atol .+ rtol .* abs.(u_next)
-            rel_change = maximum(Δu ./ scale)
+            Δm = abs(u_next[3] - u_now[3])
+            scale = atol + rtol * abs(u_next[3])
+            rel_change = Δm / scale
 
             if rel_change < 1.0
                 consecutive_good += 1
