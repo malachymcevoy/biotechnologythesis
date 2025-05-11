@@ -18,7 +18,7 @@ function model!(du, u, p, t)
     du[7] = -kb * R * m + ku * cl + vtl + kd * cl + Rin - mu * R
 end
 
-ODEfig = plot()  # New plot for each loop iteration
+ODEfig = plot(legend=true)
 
 function make_discrete_dilute!(dilSpecs)
     return function (integrator)
@@ -127,17 +127,12 @@ for (i, color) in zip([5000.0, 10000.0, 24000.0, 60000.0], colors)
     time_vals = sol.t / 60  # Convert to hours
     data_index = 6  # Index for Gm
 
-    plot!(ODEfig, time_vals, sol[data_index, :], color=color, legend=false)
+    plot!(ODEfig, time_vals, sol[data_index, :], color=color, label="e₀ = $(Int(i))µM")
 
     # Add steady state events to the plot using the same color as the corresponding line
     if !isempty(steady_state_events)
         gm_values = [sol(steady_time * 60)[data_index] for steady_time in steady_state_events]
-        scatter!(
-            ODEfig,
-            steady_state_events, gm_values,
-            markershape=:circle,
-            color=color
-        )
+    scatter!(ODEfig, steady_state_events, gm_values, markershape=:circle, color=color, label="")
     end
 
     xlabel!("Time (hours)")

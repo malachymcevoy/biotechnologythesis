@@ -81,20 +81,16 @@ peak_time_15000 = sol_15000.t[argmax(sol_15000[6, :])]
 peak_time_60000 = sol_60000.t[argmax(sol_60000[6, :])]
 
 # Plotting both solutions
-ODEfig = plot()
-plot!(ODEfig, time_vals, sol_15000[6, :], linewidth=2, legend=false)
-plot!(ODEfig, time_vals, sol_60000[6, :], linewidth=2, legend=false)
+ODEfig = plot(title="GFP Expression Dynamics", legend=true)
+plot!(ODEfig, time_vals, sol_15000[6, :], linewidth=2, label="GFP (e₀=15000)")
+plot!(ODEfig, time_vals, sol_60000[6, :], linewidth=2, label="GFP (e₀=60000)")
 
 scatter!([peak_time_15000 / 60], [peak_Gm_15000],
-         color=:blue, marker=:star5, markersize=8, legend=false)
+         color=:blue, marker=:star5, markersize=8, label="")
 
 scatter!([peak_time_60000 / 60], [peak_Gm_60000],
-           color=:orange, marker=:star5, markersize=8, legend=false)
+         color=:orange, marker=:star5, markersize=8, label="")
 
-println("Peak GFP concentration for e₀=15000 at", (round(peak_Gm_15000, digits=4)), "µM")
-println("Peak GFP concentration for e₀=60000 at", (round(peak_Gm_60000, digits=4)), "µM")
-
-# Add labels and title
 xlabel!("Time (hours)")
 ylabel!("GFP Concentration (µM)")
 
