@@ -62,8 +62,8 @@ end
 
 # ╔═╡ 2538aa2c-b133-42ba-ba3b-8d782267808d
 begin
-	Z = [rosenbrock([x, y], p) for x in x_range, y in y_range]
-
+	Z = [rosenbrock([x, y], p) for y in y_range, x in x_range]
+	
 	# Plot contour
 	contour(
 	    x_range, y_range, transpose(Z),
@@ -2540,9 +2540,9 @@ version = "1.4.1+2"
 # ╠═9308d2e8-e19d-49d9-a324-be36c6843e10
 # ╟─0a33ffc9-5eb3-4ca8-80ee-7dbf90113d21
 # ╟─9e6c1762-df67-44ad-b9c2-cef71876f269
-# ╠═a0cadcca-2103-49e0-9ea5-3f630b57fa3f
+# ╟─a0cadcca-2103-49e0-9ea5-3f630b57fa3f
 # ╟─5b8e3f43-d798-4178-b1a1-e6a6f1da7d99
-# ╟─2538aa2c-b133-42ba-ba3b-8d782267808d
+# ╠═2538aa2c-b133-42ba-ba3b-8d782267808d
 # ╟─07be6a36-2163-44c5-ab5d-88ae41481a7c
 # ╠═45370404-fe3a-4653-82ce-51c21449e381
 # ╟─7d74f34a-d85d-4409-98f2-ae2305d09a7f

@@ -23,7 +23,7 @@ prey_vals = sol[1, :]
 pred_vals = sol[2, :]
 
 plt1 = plot(sol.t, prey_vals, label="Prey", 
-            linewidth=2, xlabel="Time", ylabel="Population",
+            linewidth=2, xlabel="Time (arbitrary)", ylabel="Population (arbitrary)",
             size=(600,400), xlims=(0,50), color=:blue)
 
 plot!(sol.t, pred_vals, label="Predator", linewidth=2, color=:red)
